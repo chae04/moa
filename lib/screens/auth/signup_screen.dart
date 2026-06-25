@@ -13,6 +13,7 @@ class _SignupScreenState extends State<SignupScreen> {
   // TextEditingController: TextFeild의 입력값을 가져오는 컨트롤러
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final passwordCheckController = TextEditingController();
   final nicknameController = TextEditingController();
 
   @override
@@ -48,6 +49,15 @@ class _SignupScreenState extends State<SignupScreen> {
               controller: passwordController, // 입력값 연결
               decoration: InputDecoration(labelText: '비밀번호'),
               obscureText: true, // 비밀번호 가리기 (***)
+            ),
+
+            SizedBox(height: 16),
+
+            // 비밀번호 확인 입력 필드
+            TextField(
+              controller: passwordCheckController,
+              decoration: InputDecoration(labelText: '비밀번호 확인'),
+              obscureText: true,
             ),
 
             SizedBox(height: 16),
