@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:moa/screens/auth/signup_screen.dart';
+import 'package:moa/screens/home/home_screen.dart';
+
 // StatefulWidget: 상태(데이터)가 변하는 화면에서 사용
 // 로그인 화면은 텍스트 입력값이 변하니까 StatefulWidget 사용
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -58,17 +60,29 @@ class _LoginScreenState extends State<LoginScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   // ‼️TODO: 로그인 로직 연결 예정
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  );
                 },
                 child: Text('로그인'),
               ),
             ),
 
             // 회원가입 이동 버튼
-            TextButton(
-              onPressed: () {
-                // ‼️TODO: 회원가입 화면으로 이동 예정
-              },
-              child: Text('회원가입'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SignupScreen(),
+                    ),
+                  );
+                },
+                child: Text('회원가입'),
+              ),
             ),
           ],
         ),

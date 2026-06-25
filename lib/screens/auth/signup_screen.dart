@@ -1,0 +1,85 @@
+import 'package:flutter/material.dart';
+
+// StatefulWidget: 상태(데이터)가 변하는 화면에서 사용
+// 회원가입 화면은 텍스트 입력값이 변하니까 StatefulWidget 사용
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
+
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  // TextEditingController: TextFeild의 입력값을 가져오는 컨트롤러
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final nicknameController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    // Scaffold: 앱 화면의 기본 뼈대
+    return Scaffold(
+      body: Padding(
+        // padding: 내부 여백 설정
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 앱 타이틀
+            Text(
+              'Moa',
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            ),
+
+            // sizedBox: 빈 공간 (height = 세로 간격)
+            SizedBox(height: 48),
+
+            // 이메일 입력 필드
+            TextField(
+              controller: emailController, // 입력값 연결
+              decoration: InputDecoration(labelText: '이메일'),
+              keyboardType: TextInputType.emailAddress,
+            ),
+
+            SizedBox(height: 16),
+
+            // 비밀번호 입력 필드
+            TextField(
+              controller: passwordController, // 입력값 연결
+              decoration: InputDecoration(labelText: '비밀번호'),
+              obscureText: true, // 비밀번호 가리기 (***)
+            ),
+
+            SizedBox(height: 16),
+
+            // 닉네임 입력 필드
+            TextField(
+              controller: nicknameController,
+              decoration: InputDecoration(labelText: '닉네임'),
+              keyboardType: TextInputType.name,
+            ),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('이전'),
+                ),
+
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('회원가입'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
