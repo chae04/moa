@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moa/screens/transaction/transaction_form_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,15 @@ class _HomeScreenState extends State<HomeScreen> {
     '취미': 0,
     '고정비': 0,
     '기타': 0,
+  };
+
+  // 예산 카테고리별 사용 금액
+  Map<String, int> usedByBudgetCategory = {
+    '생활비': 0,
+    '저축': 0,
+    '행복비': 0,
+    '교통비': 0,
+    '투자': 0,
   };
 
   // 카테고리별 예산
@@ -47,17 +57,75 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text('저축: $totalSaving'),
               ],
             ),
-
             Column(
               children: [
-                LinearProgressIndicator(
-                  value: budgetByCategory['생활비'] == 0
-                      ? 0
-                      : (expenseByCategory['식비']! +
-                                expenseByCategory['쇼핑']! +
-                                expenseByCategory['고정비']! +
-                                expenseByCategory['구독']!) /
-                            budgetByCategory['생활비']!,
+                Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12.0),
+                      child: Text('생활비'),
+                    ),
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: budgetByCategory['생활비'] == 0
+                            ? 0
+                            : usedByBudgetCategory['생활비']! /
+                                  budgetByCategory['생활비']!,
+                      ),
+                    ),
+                  ],
+                ),
+
+                Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12.0),
+                      child: Text('교통비'),
+                    ),
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: budgetByCategory['생활비'] == 0
+                            ? 0
+                            : usedByBudgetCategory['교통비']! /
+                                  budgetByCategory['교통비']!,
+                      ),
+                    ),
+                  ],
+                ),
+
+                Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12.0),
+                      child: Text('생활비'),
+                    ),
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: budgetByCategory['생활비'] == 0
+                            ? 0
+                            : usedByBudgetCategory['행복비']! /
+                                  budgetByCategory['행복비']!,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TransactionFormScreen(),
+                        ),
+                      );
+                    },
+                    child: Text('거래 추가'),
+                  ),
                 ),
               ],
             ),
