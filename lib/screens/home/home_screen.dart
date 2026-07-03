@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
+import 'package:moa/screens/transaction/transaction_list_screen.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,6 +52,19 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
+            Column(
+              children: [
+                SizedBox(
+                  height: 400,
+                  child: TableCalendar(
+                    // 2026/01/01부터 2년 뒤 12/31까지 표시
+                    firstDay: DateTime.utc(2026, 1, 1),
+                    lastDay: DateTime(DateTime.now().year + 2, 12, 31),
+                    focusedDay: DateTime.now(),
+                  ),
+                ),
+              ],
+            ),
             Column(
               children: [
                 Text('수입: $totalIncome'),
@@ -125,6 +140,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                     child: Text('거래 추가'),
+                  ),
+                ),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TransactionListScreen(),
+                        ),
+                      );
+                    },
+                    child: Text('거래 목록'),
                   ),
                 ),
               ],
