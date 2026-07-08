@@ -13,26 +13,33 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   final transactionType = TextEditingController();
   final transactionCategory = TextEditingController();
   final budgetCategory = TextEditingController();
-  final transactionDate = TextEditingController();
   final transactionMemo = TextEditingController();
 
+  // 드롭박스 아이템 목록
   List<String> transactionTypeList = ['수입', '지출', '저축'];
-  String selectedTransactionType = '지출'; // 기본값
+  List<String> budgetCategoryList = ['생활비', '자유비', '저축']; // dart format off
+  List<String> transactionCategoryList = ['월급', '용돈', '식비', '교통', '쇼핑', '구독', '취미', '기타']; // dart format on
 
-  List<String> transactionCategoryList = [
-    '월급',
-    '용돈',
-    '식비',
-    '교통',
-    '쇼핑',
-    '구독',
-    '취미',
-    '기타',
-  ];
+  // 기본값 지정 및 선택된 값 저장 변수
+  String selectedTransactionType = '지출';
   String selectedTransactionCategory = '식비';
-
-  List<String> budgetCategoryList = ['생활비', '자유비', '저축'];
   String selectedBudgetCategory = '생활비';
+  DateTime selectedDate = DateTime.now();
+
+  // 날짜 선택 함수
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2026),
+      lastDate: DateTime(DateTime.now().year + 2, 12, 31),
+    );
+    if (picked != null) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,10 +140,15 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                     ),
                   ),
                 ),
-                TextField(
-                  controller: transactionDate,
-                  decoration: InputDecoration(labelText: '날짜'),
-                  keyboardType: TextInputType.datetime,
+                SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () => _selectDate(context),
+                  child: InputDecorator(
+                    decoration: InputDecoration(labelText: '날짜'),
+                    child: Text(
+                      '${selectedDate.year}.${selectedDate.month}.${selectedDate.day}',
+                    ),
+                  ),
                 ),
                 SizedBox(height: 20),
                 TextField(
