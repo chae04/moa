@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moa/services/auth_service.dart';
 
 // StatefulWidget: 상태(데이터)가 변하는 화면에서 사용
 // 회원가입 화면은 텍스트 입력값이 변하니까 StatefulWidget 사용
@@ -15,6 +16,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final passwordController = TextEditingController();
   final passwordCheckController = TextEditingController();
   final nicknameController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -80,8 +82,36 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
 
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
+                  onPressed: () async {
+                    if (passwordController.text.length < 6) {
+                      print('비밀번호 짧음');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('비밀번호는 6자리 이상이어야 합니다.')),
+                      );
+                      return;
+                    } else if (passwordController.text !=
+                        passwordCheckController.text) {
+                      print('비밀번호 불일치');
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('비밀번호 재확인')));
+                      return;
+                    }
+                    print('validation 통과');
+                    try {
+                      await _authService.signUp(
+                        email: emailController.text,
+                        password: passwordController.text,
+                        nickname: nicknameController.text,
+                      );
+                      print('회원가입 성공');
+                      if (mounted) Navigator.pop(context); // 회원가입 후 로그인 화면으로 이동
+                    } catch (e) {
+                      print('에러: $e');
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('회원가입 실패: $e')));
+                    }
                   },
                   child: Text('회원가입'),
                 ),
