@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:moa/screens/auth/signup_screen.dart';
 import 'package:moa/screens/home/home_screen.dart';
+import 'package:moa/services/auth_service.dart';
 
 // StatefulWidget: 상태(데이터)가 변하는 화면에서 사용
 // 로그인 화면은 텍스트 입력값이 변하니까 StatefulWidget 사용
@@ -15,6 +16,8 @@ class _LoginScreenState extends State<LoginScreen> {
   // TextEditingController: TextFeild의 입력값을 가져오는 컨트롤러
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -58,13 +61,29 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // ‼️TODO: 로그인 로직 연결 예정
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
-                },
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        try {
+                          setState(() => isLoading = true);
+                          await _authService.signIn(
+                            email: emailController.text,
+                            password: passwordController.text,
+                          );
+                          setState(() => isLoading = false);
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomeScreen(),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('이메일 또는 비밀번호를 확인해주세요.')),
+                          );
+                        }
+                      },
                 child: Text('로그인'),
               ),
             ),

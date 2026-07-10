@@ -37,4 +37,9 @@ class AuthService {
     }
     print('Firestore 저장 완료');
   }
+
+  // 로그인
+  Future<void> signIn({required String email, required String password}) async {
+    await _auth.signInWithEmailAndPassword(email: email, password: password);
+  }
 }
