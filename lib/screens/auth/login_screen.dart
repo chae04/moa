@@ -32,10 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // 앱 타이틀
-            Text(
-              'Moa',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
+            Text('Moa', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
 
             // sizedBox: 빈 공간 (height = 세로 간격)
             SizedBox(height: 48),
@@ -74,14 +71,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => HomeScreen(),
-                            ),
+                            MaterialPageRoute(builder: (context) => HomeScreen()),
                           );
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('이메일 또는 비밀번호를 확인해주세요.')),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('이메일 또는 비밀번호를 확인해주세요.')));
                         }
                       },
                 child: Text('로그인'),
@@ -95,9 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const SignupScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const SignupScreen()),
                   );
                 },
                 child: Text('회원가입'),

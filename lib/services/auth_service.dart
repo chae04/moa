@@ -13,12 +13,11 @@ class AuthService {
   }) async {
     // Firebase Auth에 이메일/비밀번호로 계정 생성
     try {
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(
-            // 자동생성된 uid,
-            email: email,
-            password: password,
-          );
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        // 자동생성된 uid,
+        email: email,
+        password: password,
+      );
 
       try {
         // Firebase에 닉네임 저장

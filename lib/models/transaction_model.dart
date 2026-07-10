@@ -52,7 +52,7 @@ class TransactionModel {
       amount: map['amount'],
       type: map['type'],
       category: map['category'],
-      budgetCategory: map['budgetcategory'],
+      budgetCategory: map['budgetCategory'],
       date: (map['date'] as Timestamp).toDate(),
       memo: map['memo'],
       createdAt: (map['createdAt'] as Timestamp).toDate(),

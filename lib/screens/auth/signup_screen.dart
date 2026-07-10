@@ -29,10 +29,7 @@ class _SignupScreenState extends State<SignupScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // 앱 타이틀
-            Text(
-              'Moa',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
+            Text('Moa', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
 
             // sizedBox: 빈 공간 (height = 세로 간격)
             SizedBox(height: 48),
@@ -85,12 +82,11 @@ class _SignupScreenState extends State<SignupScreen> {
                   onPressed: () async {
                     if (passwordController.text.length < 6) {
                       print('비밀번호 짧음');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('비밀번호는 6자리 이상이어야 합니다.')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('비밀번호는 6자리 이상이어야 합니다.')));
                       return;
-                    } else if (passwordController.text !=
-                        passwordCheckController.text) {
+                    } else if (passwordController.text != passwordCheckController.text) {
                       print('비밀번호 불일치');
                       ScaffoldMessenger.of(
                         context,

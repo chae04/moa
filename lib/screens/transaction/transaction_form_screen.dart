@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:moa/models/transaction_model.dart';
+import 'package:moa/services/transaction_service.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   const TransactionFormScreen({super.key});
@@ -10,10 +13,8 @@ class TransactionFormScreen extends StatefulWidget {
 class _TransactionScreenState extends State<TransactionFormScreen> {
   final transactionPrice = TextEditingController();
   final transactionName = TextEditingController();
-  final transactionType = TextEditingController();
-  final transactionCategory = TextEditingController();
-  final budgetCategory = TextEditingController();
   final transactionMemo = TextEditingController();
+  final TransactionService _transactionService = TransactionService();
 
   // 드롭박스 아이템 목록
   List<String> transactionTypeList = ['수입', '지출', '저축'];
@@ -79,10 +80,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                       items: transactionTypeList.map<DropdownMenuItem<String>>((
                         String value,
                       ) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
+                        return DropdownMenuItem<String>(value: value, child: Text(value));
                       }).toList(),
                       value: selectedTransactionType,
                       onChanged: (String? newValue) {
@@ -100,14 +98,11 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton(
                       isDense: true,
-                      items: transactionCategoryList
-                          .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          })
-                          .toList(),
+                      items: transactionCategoryList.map<DropdownMenuItem<String>>((
+                        String value,
+                      ) {
+                        return DropdownMenuItem<String>(value: value, child: Text(value));
+                      }).toList(),
                       value: selectedTransactionCategory,
                       onChanged: (String? newValue) {
                         setState(() {
@@ -118,28 +113,31 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
-                InputDecorator(
-                  decoration: InputDecoration(labelText: '예산 카테고리'),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton(
-                      isDense: true,
-                      items: budgetCategoryList.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      value: selectedBudgetCategory,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedBudgetCategory = newValue!;
-                        });
-                      },
+
+                if (selectedTransactionType != '수입')
+                  InputDecorator(
+                    decoration: InputDecoration(labelText: '예산 카테고리'),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton(
+                        isDense: true,
+                        items: budgetCategoryList.map<DropdownMenuItem<String>>((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        value: selectedBudgetCategory,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedBudgetCategory = newValue!;
+                          });
+                        },
+                      ),
                     ),
                   ),
-                ),
+
                 SizedBox(height: 20),
                 GestureDetector(
                   onTap: () => _selectDate(context),
@@ -164,7 +162,23 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      final transaction = TransactionModel(
+                        id: '',
+                        userId: FirebaseAuth.instance.currentUser!.uid,
+                        title: transactionName.text,
+                        amount: int.parse(transactionPrice.text),
+                        type: selectedTransactionType,
+                        category: selectedTransactionCategory,
+                        budgetCategory: selectedTransactionType == '수입'
+                            ? null
+                            : selectedBudgetCategory,
+                        date: selectedDate,
+                        memo: transactionMemo.text,
+                        createdAt: DateTime.now(),
+                      );
+                      // Firestore에 저장
+                      await _transactionService.addTransaction(transaction);
                       Navigator.pop(context);
                     },
                     child: Text('저장'),
