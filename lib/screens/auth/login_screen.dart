@@ -74,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             MaterialPageRoute(builder: (context) => HomeScreen()),
                           );
                         } catch (e) {
+                          setState(() => isLoading = false);
                           ScaffoldMessenger.of(
                             context,
                           ).showSnackBar(SnackBar(content: Text('이메일 또는 비밀번호를 확인해주세요.')));

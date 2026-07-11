@@ -4,7 +4,8 @@ import 'package:moa/models/transaction_model.dart';
 import 'package:moa/services/transaction_service.dart';
 
 class TransactionFormScreen extends StatefulWidget {
-  const TransactionFormScreen({super.key});
+  final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
+  const TransactionFormScreen({super.key, this.transaction});
 
   @override
   State<TransactionFormScreen> createState() => _TransactionScreenState();
@@ -26,6 +27,21 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   String selectedTransactionCategory = '식비';
   String selectedBudgetCategory = '생활비';
   DateTime selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    // 수정 모드면 기존 값 채우기
+    if (widget.transaction != null) {
+      transactionName.text = widget.transaction!.title;
+      transactionPrice.text = widget.transaction!.amount.toString();
+      selectedTransactionType = widget.transaction!.type;
+      selectedTransactionCategory = widget.transaction!.category;
+      selectedBudgetCategory = widget.transaction!.budgetCategory ?? '생활비'; // null일 때 기본값
+      selectedDate = widget.transaction!.date;
+      transactionMemo.text = widget.transaction!.memo ?? ''; // null일 때 기본값
+    }
+  }
 
   // 날짜 선택 함수
   Future<void> _selectDate(BuildContext context) async {
@@ -164,7 +180,8 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   child: ElevatedButton(
                     onPressed: () async {
                       final transaction = TransactionModel(
-                        id: '',
+                        // ?: null 허용, ??: null일 때 기본값
+                        id: widget.transaction?.id ?? '', // 수정 모드면 기존 id, 추가 모드면 빈 문자열
                         userId: FirebaseAuth.instance.currentUser!.uid,
                         title: transactionName.text,
                         amount: int.parse(transactionPrice.text),
@@ -178,7 +195,13 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                         createdAt: DateTime.now(),
                       );
                       // Firestore에 저장
-                      await _transactionService.addTransaction(transaction);
+                      if (widget.transaction == null) {
+                        // 새 거래 추가 모드
+                        await _transactionService.addTransaction(transaction);
+                      } else {
+                        // 기존 거래 수정 모드
+                        await _transactionService.updateTransaction(transaction);
+                      }
                       Navigator.pop(context);
                     },
                     child: Text('저장'),

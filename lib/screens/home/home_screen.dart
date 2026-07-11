@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
 import 'package:moa/screens/transaction/transaction_list_screen.dart';
+import 'package:moa/services/transaction_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,6 +15,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int totalIncome = 0; // 총 수입
   int totalExpense = 0; // 총 지출
   int totalSaving = 0; // 총 저축
+
+  final TransactionService _transactionService = TransactionService();
 
   // 카테고리별 지출
   Map<String, int> expenseByCategory = {
@@ -36,13 +39,33 @@ class _HomeScreenState extends State<HomeScreen> {
   };
 
   // 카테고리별 예산
-  Map<String, int> budgetByCategory = {
-    '생활비': 0,
-    '저축': 0,
-    '행복비': 0,
-    '교통비': 0,
-    '투자': 0,
-  };
+  Map<String, int> budgetByCategory = {'생활비': 0, '저축': 0, '행복비': 0, '교통비': 0, '투자': 0};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final now = DateTime.now();
+    final transactions = await _transactionService.getMonthlyTransactions(
+      now.year,
+      now.month,
+    );
+
+    setState(() {
+      totalIncome = transactions
+          .where((t) => t.type == '수입')
+          .fold(0, (sum, t) => sum + t.amount);
+      totalExpense = transactions
+          .where((t) => t.type == '지출')
+          .fold(0, (sum, t) => sum + t.amount);
+      totalSaving = transactions
+          .where((t) => t.type == '저축')
+          .fold(0, (sum, t) => sum + t.amount);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,8 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: LinearProgressIndicator(
                         value: budgetByCategory['생활비'] == 0
                             ? 0
-                            : usedByBudgetCategory['생활비']! /
-                                  budgetByCategory['생활비']!,
+                            : usedByBudgetCategory['생활비']! / budgetByCategory['생활비']!,
                       ),
                     ),
                   ],
@@ -99,10 +121,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Expanded(
                       child: LinearProgressIndicator(
-                        value: budgetByCategory['생활비'] == 0
+                        value: budgetByCategory['교통비'] == 0
                             ? 0
-                            : usedByBudgetCategory['교통비']! /
-                                  budgetByCategory['교통비']!,
+                            : usedByBudgetCategory['교통비']! / budgetByCategory['교통비']!,
                       ),
                     ),
                   ],
@@ -116,10 +137,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Expanded(
                       child: LinearProgressIndicator(
-                        value: budgetByCategory['생활비'] == 0
+                        value: budgetByCategory['행복비'] == 0
                             ? 0
-                            : usedByBudgetCategory['행복비']! /
-                                  budgetByCategory['행복비']!,
+                            : usedByBudgetCategory['행복비']! / budgetByCategory['행복비']!,
                       ),
                     ),
                   ],
@@ -137,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(
                           builder: (context) => const TransactionFormScreen(),
                         ),
-                      );
+                      ).then((_) => _loadData());
                     },
                     child: Text('거래 추가'),
                   ),
@@ -152,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(
                           builder: (context) => const TransactionListScreen(),
                         ),
-                      );
+                      ).then((_) => _loadData());
                     },
                     child: Text('거래 목록'),
                   ),
