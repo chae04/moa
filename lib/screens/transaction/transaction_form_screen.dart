@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/services/transaction_service.dart';
+import 'package:moa/services/budget_service.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
@@ -16,6 +17,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   final transactionName = TextEditingController();
   final transactionMemo = TextEditingController();
   final TransactionService _transactionService = TransactionService();
+  final BudgetService _budgetService = BudgetService();
 
   // 드롭박스 아이템 목록
   List<String> transactionTypeList = ['수입', '지출', '저축'];
@@ -194,6 +196,24 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                         memo: transactionMemo.text,
                         createdAt: DateTime.now(),
                       );
+                      if (selectedTransactionType == '수입') {
+                        final now = DateTime.now();
+                        final month =
+                            '${now.year}-${now.month.toString().padLeft(2, '0')}';
+
+                        // 이번 달 거래 목록 불러오기
+                        final transactions = await _transactionService
+                            .getMonthlyTransactions(now.year, now.month);
+
+                        // 이번 달 수입 합계 계산
+                        final totalIncome =
+                            transactions
+                                .where((t) => t.type == 'income')
+                                .fold(0, (sum, t) => sum + t.amount) +
+                            int.parse(transactionPrice.text);
+
+                        await _budgetService.updateBudgetAmount(month, totalIncome);
+                      }
                       // Firestore에 저장
                       if (widget.transaction == null) {
                         // 새 거래 추가 모드

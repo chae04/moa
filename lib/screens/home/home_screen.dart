@@ -3,6 +3,8 @@ import 'package:moa/screens/transaction/transaction_form_screen.dart';
 import 'package:moa/screens/transaction/transaction_list_screen.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:moa/screens/budget/budget_form_screen.dart';
+import 'package:moa/services/budget_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int totalSaving = 0; // 총 저축
 
   final TransactionService _transactionService = TransactionService();
+  final BudgetService _budgetService = BudgetService();
 
   // 카테고리별 지출
   Map<String, int> expenseByCategory = {
@@ -33,13 +36,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, int> usedByBudgetCategory = {
     '생활비': 0,
     '저축': 0,
-    '행복비': 0,
+    '자유비': 0,
     '교통비': 0,
     '투자': 0,
   };
 
   // 카테고리별 예산
-  Map<String, int> budgetByCategory = {'생활비': 0, '저축': 0, '행복비': 0, '교통비': 0, '투자': 0};
+  Map<String, int> budgetByCategory = {'생활비': 0, '저축': 0, '자유비': 0, '교통비': 0, '투자': 0};
 
   @override
   void initState() {
@@ -49,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadData() async {
     final now = DateTime.now();
+    final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
     final transactions = await _transactionService.getMonthlyTransactions(
       now.year,
       now.month,
@@ -64,7 +68,33 @@ class _HomeScreenState extends State<HomeScreen> {
       totalSaving = transactions
           .where((t) => t.type == '저축')
           .fold(0, (sum, t) => sum + t.amount);
+
+      // usedByBudgetCategory 초기화
+      usedByBudgetCategory = {'생활비': 0, '저축': 0, '자유비': 0, '교통비': 0, '투자': 0};
+
+      for (var t in transactions) {
+        if (t.budgetCategory != null) {
+          usedByBudgetCategory[t.budgetCategory!] =
+              (usedByBudgetCategory[t.budgetCategory!] ?? 0) + t.amount;
+        }
+      }
     });
+
+    // 예산 데이터 불러오기
+    final budget = await _budgetService.getBudget(month);
+    if (budget != null) {
+      print('categories: ${budget.categories}');
+
+      setState(() {
+        for (var c in budget.categories) {
+          print('category: ${c['category']}, amount: ${c['amount']}');
+
+          budgetByCategory[c['category']] = c['amount'];
+        }
+      });
+    }
+    print('budgetByCategory: $budgetByCategory');
+    print('usedByBudgetCategory: $usedByBudgetCategory');
   }
 
   @override
@@ -137,9 +167,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Expanded(
                       child: LinearProgressIndicator(
-                        value: budgetByCategory['행복비'] == 0
+                        value: budgetByCategory['자유비'] == 0
                             ? 0
-                            : usedByBudgetCategory['행복비']! / budgetByCategory['행복비']!,
+                            : usedByBudgetCategory['자유비']! / budgetByCategory['자유비']!,
                       ),
                     ),
                   ],
@@ -175,6 +205,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ).then((_) => _loadData());
                     },
                     child: Text('거래 목록'),
+                  ),
+                ),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => BudgetFormScreen()),
+                      ).then((_) => _loadData());
+                    },
+                    child: Text('예산 설정'),
                   ),
                 ),
               ],
