@@ -3,8 +3,8 @@ import 'package:moa/screens/transaction/transaction_form_screen.dart';
 import 'package:moa/screens/transaction/transaction_list_screen.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:moa/screens/budget/budget_form_screen.dart';
 import 'package:moa/services/budget_service.dart';
+import 'package:moa/screens/mypage/mypage_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -214,10 +214,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => BudgetFormScreen()),
+                        MaterialPageRoute(builder: (context) => MypageScreen()),
                       ).then((_) => _loadData());
                     },
-                    child: Text('예산 설정'),
+                    child: Text('마이 페이지'),
                   ),
                 ),
               ],

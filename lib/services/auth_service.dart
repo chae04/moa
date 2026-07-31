@@ -41,4 +41,22 @@ class AuthService {
   Future<void> signIn({required String email, required String password}) async {
     await _auth.signInWithEmailAndPassword(email: email, password: password);
   }
+
+  // 닉네임 불러오기
+  Future<String> getNickname() async {
+    final doc = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+    return doc.data()!['nickname'];
+  }
+
+  // 닉네임 수정
+  Future<void> updateNickname(String nickname) async {
+    await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
+      'nickname': nickname,
+    });
+  }
+
+  // 로그아웃
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
 }
