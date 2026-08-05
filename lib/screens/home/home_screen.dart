@@ -20,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
+  DateTime _focusedDay = DateTime.now(); // 현재 선택된 날짜
 
   // 카테고리별 지출
   Map<String, int> expenseByCategory = {
@@ -50,13 +51,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({int? year, int? month}) async {
     final now = DateTime.now();
-    final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-    final transactions = await _transactionService.getMonthlyTransactions(
-      now.year,
-      now.month,
-    );
+    final y = year ?? now.year;
+    final m = month ?? now.month;
+    final monthStr = '${y}-${m.toString().padLeft(2, '0')}';
+    final transactions = await _transactionService.getMonthlyTransactions(y, m);
 
     setState(() {
       totalIncome = transactions
@@ -81,20 +81,20 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     // 예산 데이터 불러오기
-    final budget = await _budgetService.getBudget(month);
+    final budget = await _budgetService.getBudget(monthStr);
     if (budget != null) {
-      print('categories: ${budget.categories}');
+      print('[$_focusedDay] categories: ${budget.categories}');
 
       setState(() {
         for (var c in budget.categories) {
-          print('category: ${c['category']}, amount: ${c['amount']}');
+          print('[$_focusedDay] category: ${c['category']}, amount: ${c['amount']}');
 
           budgetByCategory[c['category']] = c['amount'];
         }
       });
     }
-    print('budgetByCategory: $budgetByCategory');
-    print('usedByBudgetCategory: $usedByBudgetCategory');
+    print('[$_focusedDay] budgetByCategory: $budgetByCategory');
+    print('[$_focusedDay] usedByBudgetCategory: $usedByBudgetCategory');
   }
 
   @override
@@ -113,7 +113,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     // 2026/01/01부터 2년 뒤 12/31까지 표시
                     firstDay: DateTime.utc(2026, 1, 1),
                     lastDay: DateTime(DateTime.now().year + 2, 12, 31),
-                    focusedDay: DateTime.now(),
+                    focusedDay: _focusedDay,
+                    onPageChanged: (focusedDay) {
+                      setState(() {
+                        _focusedDay = focusedDay;
+                      });
+                      _loadData(year: focusedDay.year, month: focusedDay.month);
+                    },
                   ),
                 ),
               ],

@@ -15,6 +15,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   final TransactionService _transactionService = TransactionService();
   List<TransactionModel> transactions = [];
   bool isLoading = true;
+  int selectedYear = DateTime.now().year;
+  int selectedMonth = DateTime.now().month;
+  // [2026년부터 현재+2까지의 개수]만큼 2026년부터 표시함. 즉, 2026년부터 내후년까지 표시.
+  List<int> yearList = List.generate(DateTime.now().year - 2026 + 3, (i) => 2026 + i);
+  List<int> monthList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   @override
   void initState() {
@@ -23,8 +28,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   Future<void> _loadTransactions() async {
-    final now = DateTime.now();
-    final result = await _transactionService.getMonthlyTransactions(now.year, now.month);
+    final result = await _transactionService.getMonthlyTransactions(
+      selectedYear,
+      selectedMonth,
+    );
 
     setState(() {
       transactions = result;
@@ -36,12 +43,46 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.only(left: 24.0, top: 60.0, right: 24.0, bottom: 24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             Text('거래 목록', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             SizedBox(height: 16),
+
+            Row(
+              children: [
+                // 년 선택
+                DropdownButton<int>(
+                  value: selectedYear,
+                  items: yearList.map<DropdownMenuItem<int>>((int value) {
+                    return DropdownMenuItem(value: value, child: Text('$value년'));
+                  }).toList(),
+                  onChanged: (int? newValue) {
+                    setState(() {
+                      selectedYear = newValue!;
+                    });
+                    _loadTransactions();
+                  },
+                ),
+
+                SizedBox(width: 12),
+
+                // 월 선택
+                DropdownButton<int>(
+                  value: selectedMonth,
+                  items: monthList.map<DropdownMenuItem<int>>((int value) {
+                    return DropdownMenuItem(value: value, child: Text('$value월'));
+                  }).toList(),
+                  onChanged: (int? newValue) {
+                    setState(() {
+                      selectedMonth = newValue!;
+                    });
+                    _loadTransactions();
+                  },
+                ),
+              ],
+            ),
 
             // 로딩 중이면 스피너, 아니면 목록 표시
             isLoading
