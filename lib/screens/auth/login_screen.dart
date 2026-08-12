@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:moa/screens/auth/signup_screen.dart';
-import 'package:moa/screens/home/home_screen.dart';
+import 'package:moa/screens/shell_screen.dart';
 import 'package:moa/services/auth_service.dart';
 
 // StatefulWidget: 상태(데이터)가 변하는 화면에서 사용
@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => HomeScreen()),
+                            MaterialPageRoute(builder: (context) => ShellScreen()),
                           );
                         } catch (e) {
                           setState(() => isLoading = false);

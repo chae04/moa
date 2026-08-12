@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:moa/screens/home/home_screen.dart';
+import 'package:moa/screens/shell_screen.dart';
 import 'firebase_options.dart';
 import 'screens/auth/login_screen.dart';
 import 'package:moa/constants/colors.dart';
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
           }
           // 로그인 상태 : 홈 화면
           if (snapshot.hasData) {
-            return HomeScreen();
+            return ShellScreen();
           }
           // 로그아웃 상태: 로그인 화면
           return LoginScreen();

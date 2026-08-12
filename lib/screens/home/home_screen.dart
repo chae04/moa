@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:moa/constants/colors.dart';
-import 'package:moa/screens/transaction/transaction_form_screen.dart';
-import 'package:moa/screens/transaction/transaction_list_screen.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:moa/services/budget_service.dart';
-import 'package:moa/screens/mypage/mypage_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final DateTime focusedDay;
+  final Function(DateTime) onFocusedDayChanged;
+  const HomeScreen({
+    super.key,
+    required this.focusedDay,
+    required this.onFocusedDayChanged,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -21,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
-  DateTime _focusedDay = DateTime.now(); // 현재 선택된 날짜
+  late DateTime _focusedDay; // 현재 선택된 날짜
   Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계
 
   // 카테고리별 지출
@@ -50,13 +53,25 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _focusedDay = widget.focusedDay;
     _loadData();
   }
 
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusedDay != widget.focusedDay) {
+      setState(() {
+        _focusedDay = widget.focusedDay;
+      });
+      _loadData(year: widget.focusedDay.year, month: widget.focusedDay.month);
+    }
+  }
+
   Future<void> _loadData({int? year, int? month}) async {
-    final now = DateTime.now();
-    final y = year ?? now.year;
-    final m = month ?? now.month;
+    print('_loadData 호출: $year, $month');
+    final y = year ?? _focusedDay.year;
+    final m = month ?? _focusedDay.month;
     final monthStr = '${y}-${m.toString().padLeft(2, '0')}';
     final transactions = await _transactionService.getMonthlyTransactions(y, m);
 
@@ -131,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() {
                         _focusedDay = focusedDay;
                       });
+                      widget.onFocusedDayChanged(focusedDay);
                       _loadData(year: focusedDay.year, month: focusedDay.month);
                     },
                     calendarStyle: CalendarStyle(
@@ -219,62 +235,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ],
-                ),
-              ],
-            ),
-            Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TransactionFormScreen(),
-                        ),
-                      ).then((_) => _loadData());
-                    },
-                    child: Text('거래 추가'),
-                  ),
-                ),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TransactionListScreen(
-                            year: _focusedDay.year,
-                            month: _focusedDay.month,
-                          ),
-                        ),
-                      ).then((result) {
-                        if (result != null) {
-                          setState(() {
-                            _focusedDay = DateTime(result['year'], result['month']);
-                          });
-                        }
-                        _loadData(year: _focusedDay.year, month: _focusedDay.month);
-                      });
-                    },
-                    child: Text('거래 목록'),
-                  ),
-                ),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => MypageScreen()),
-                      ).then((_) => _loadData());
-                    },
-                    child: Text('마이 페이지'),
-                  ),
                 ),
               ],
             ),

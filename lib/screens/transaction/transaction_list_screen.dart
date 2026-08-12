@@ -7,7 +7,8 @@ import 'package:moa/screens/transaction/transaction_detail_screen.dart';
 class TransactionListScreen extends StatefulWidget {
   final int? year;
   final int? month;
-  const TransactionListScreen({super.key, this.year, this.month});
+  final Function(int year, int month)? onChanged;
+  const TransactionListScreen({super.key, this.year, this.month, this.onChanged});
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
@@ -21,7 +22,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   int selectedMonth = DateTime.now().month;
   // [2026년부터 현재+2까지의 개수]만큼 2026년부터 표시함. 즉, 2026년부터 내후년까지 표시.
   List<int> yearList = List.generate(DateTime.now().year - 2026 + 3, (i) => 2026 + i);
-  List<int> monthList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  List<int> monthList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   @override
   void initState() {
@@ -31,12 +32,23 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     _loadTransactions();
   }
 
+  @override
+  void didUpdateWidget(TransactionListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.year != widget.year || oldWidget.month != widget.month) {
+      selectedYear = widget.year ?? DateTime.now().year;
+      selectedMonth = widget.month ?? DateTime.now().month;
+      _loadTransactions();
+    }
+  }
+
   Future<void> _loadTransactions() async {
     final result = await _transactionService.getMonthlyTransactions(
       selectedYear,
       selectedMonth,
     );
 
+    if (!mounted) return;
     setState(() {
       transactions = result;
       isLoading = false;
@@ -63,9 +75,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     return DropdownMenuItem(value: value, child: Text('$value년'));
                   }).toList(),
                   onChanged: (int? newValue) {
+                    final year = newValue!;
                     setState(() {
-                      selectedYear = newValue!;
+                      selectedYear = year;
                     });
+                    widget.onChanged?.call(year, selectedMonth);
                     _loadTransactions();
                   },
                 ),
@@ -79,9 +93,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     return DropdownMenuItem(value: value, child: Text('$value월'));
                   }).toList(),
                   onChanged: (int? newValue) {
+                    final month = newValue!;
                     setState(() {
-                      selectedMonth = newValue!;
+                      selectedMonth = month;
                     });
+                    widget.onChanged?.call(selectedYear, month);
                     _loadTransactions();
                   },
                 ),
@@ -149,17 +165,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       },
                     ),
                   ),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context, {
-                  'year': selectedYear,
-                  'month': selectedMonth,
-                }),
-                child: Text('홈'),
-              ),
-            ),
           ],
         ),
       ),
