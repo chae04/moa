@@ -5,7 +5,9 @@ import 'package:moa/services/transaction_service.dart';
 import 'package:moa/screens/transaction/transaction_detail_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
-  const TransactionListScreen({super.key});
+  final int? year;
+  final int? month;
+  const TransactionListScreen({super.key, this.year, this.month});
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
@@ -24,6 +26,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   @override
   void initState() {
     super.initState();
+    selectedYear = widget.year ?? DateTime.now().year;
+    selectedMonth = widget.month ?? DateTime.now().month;
     _loadTransactions();
   }
 
@@ -149,7 +153,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context, {
+                  'year': selectedYear,
+                  'month': selectedMonth,
+                }),
                 child: Text('홈'),
               ),
             ),

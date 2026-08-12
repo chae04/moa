@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moa/constants/colors.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
 import 'package:moa/screens/transaction/transaction_list_screen.dart';
 import 'package:moa/services/transaction_service.dart';
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
   DateTime _focusedDay = DateTime.now(); // 현재 선택된 날짜
+  Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계
 
   // 카테고리별 지출
   Map<String, int> expenseByCategory = {
@@ -58,7 +60,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final monthStr = '${y}-${m.toString().padLeft(2, '0')}';
     final transactions = await _transactionService.getMonthlyTransactions(y, m);
 
+    // 날짜별 지출 계산
+    Map<DateTime, int> tempDaily = {};
+    for (var t in transactions) {
+      if (t.type == '지출') {
+        final day = DateTime(t.date.year, t.date.month, t.date.day);
+        tempDaily[day] = (tempDaily[day] ?? 0) + t.amount;
+      }
+    }
+
     setState(() {
+      dailyExpense = tempDaily;
       totalIncome = transactions
           .where((t) => t.type == '수입')
           .fold(0, (sum, t) => sum + t.amount);
@@ -110,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(
                   height: 400,
                   child: TableCalendar(
+                    locale: 'ko_KR', // 한글
                     // 2026/01/01부터 2년 뒤 12/31까지 표시
                     firstDay: DateTime.utc(2026, 1, 1),
                     lastDay: DateTime(DateTime.now().year + 2, 12, 31),
@@ -120,6 +133,33 @@ class _HomeScreenState extends State<HomeScreen> {
                       });
                       _loadData(year: focusedDay.year, month: focusedDay.month);
                     },
+                    calendarStyle: CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.3), // 불투명도
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: BoxDecoration(
+                        color: primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    calendarBuilders: CalendarBuilders(
+                      defaultBuilder: (context, day, focusedDay) {
+                        final key = DateTime(day.year, day.month, day.day);
+                        final amount = dailyExpense[key];
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('${day.day}', style: TextStyle(fontSize: 12)),
+                            if (amount != null)
+                              Text(
+                                '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                                style: TextStyle(fontSize: 9, color: Colors.red),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -206,9 +246,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TransactionListScreen(),
+                          builder: (context) => TransactionListScreen(
+                            year: _focusedDay.year,
+                            month: _focusedDay.month,
+                          ),
                         ),
-                      ).then((_) => _loadData());
+                      ).then((result) {
+                        if (result != null) {
+                          setState(() {
+                            _focusedDay = DateTime(result['year'], result['month']);
+                          });
+                        }
+                        _loadData(year: _focusedDay.year, month: _focusedDay.month);
+                      });
                     },
                     child: Text('거래 목록'),
                   ),
