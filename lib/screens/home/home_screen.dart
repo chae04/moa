@@ -124,6 +124,27 @@ class _HomeScreenState extends State<HomeScreen> {
     print('[$_focusedDay] usedByBudgetCategory: $usedByBudgetCategory');
   }
 
+  // 수입/지출/저축 카드 형태로 표시
+  Widget _buildSummaryCard(String label, int amount, Color color) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+          // mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Text(label, style: TextStyle(color: color, fontSize: 12)),
+          SizedBox(width: 20),
+          Text(
+            '${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text('${day.day}', style: TextStyle(fontSize: 12)),
                             if (amount != null)
                               Text(
-                                '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                                '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
                                 style: TextStyle(fontSize: 9, color: Colors.red),
                               ),
                           ],
@@ -182,9 +203,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Column(
               children: [
-                Text('수입: $totalIncome'),
-                Text('지출: $totalExpense'),
-                Text('저축: $totalSaving'),
+                _buildSummaryCard('수입', totalIncome, Colors.blue),
+                _buildSummaryCard('지출', totalExpense, Colors.red),
+                _buildSummaryCard('저축', totalSaving, Colors.green),
               ],
             ),
             Column(
@@ -200,6 +221,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         value: budgetByCategory['생활비'] == 0
                             ? 0
                             : usedByBudgetCategory['생활비']! / budgetByCategory['생활비']!,
+                            minHeight: 10,
+                            borderRadius: BorderRadius.circular(5),
                       ),
                     ),
                   ],
@@ -216,6 +239,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         value: budgetByCategory['교통비'] == 0
                             ? 0
                             : usedByBudgetCategory['교통비']! / budgetByCategory['교통비']!,
+                            minHeight: 10,
+                            borderRadius: BorderRadius.circular(5),
                       ),
                     ),
                   ],
@@ -232,6 +257,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         value: budgetByCategory['자유비'] == 0
                             ? 0
                             : usedByBudgetCategory['자유비']! / budgetByCategory['자유비']!,
+                            minHeight: 10,
+                            borderRadius: BorderRadius.circular(5),
                       ),
                     ),
                   ],
