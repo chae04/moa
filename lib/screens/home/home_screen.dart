@@ -258,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final key = DateTime(day.year, day.month, day.day);
                         final amount = dailyExpense[key];
                         return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Text(
                               '${day.day}',
@@ -281,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final key = DateTime(day.year, day.month, day.day);
                         final amount = dailyExpense[key];
                         return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Text('${day.day}', style: TextStyle(fontSize: 12)),
                             if (amount != null)

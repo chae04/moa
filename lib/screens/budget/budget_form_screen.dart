@@ -89,69 +89,73 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                 );
               }).toList(),
             ),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  final totalRatio = budgetRatios.values.fold(0, (sum, v) => sum + v);
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final totalRatio = budgetRatios.values.fold(0, (sum, v) => sum + v);
 
-                  // budgetRatios를 categories 배열로 변환
-                  final List<Map<String, dynamic>> categories = budgetRatios.entries.map((
-                    e,
-                  ) {
-                    return <String, dynamic>{
-                      'category': e.key,
-                      'ratio': e.value,
-                      'amount': 0,
-                    };
-                  }).toList();
+                      // budgetRatios를 categories 배열로 변환
+                      final List<Map<String, dynamic>> categories = budgetRatios.entries
+                          .map((e) {
+                            return <String, dynamic>{
+                              'category': e.key,
+                              'ratio': e.value,
+                              'amount': 0,
+                            };
+                          })
+                          .toList();
 
-                  // BudgetModel 생성
-                  final budget = BudgetModel(
-                    userId: FirebaseAuth.instance.currentUser!.uid,
-                    month: selectedMonth,
-                    categories: categories,
-                  );
+                      // BudgetModel 생성
+                      final budget = BudgetModel(
+                        userId: FirebaseAuth.instance.currentUser!.uid,
+                        month: selectedMonth,
+                        categories: categories,
+                      );
 
-                  // 비율 합계 확인
-                  if (totalRatio != 100) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('비율 합계가 100%가 되어야 합니다. 현재: $totalRatio')),
-                    );
-                    return;
-                  }
+                      // 비율 합계 확인
+                      if (totalRatio != 100) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('비율 합계가 100%가 되어야 합니다. 현재: $totalRatio'),
+                          ),
+                        );
+                        return;
+                      }
 
-                  await _budgetService.setBudget(budget);
-                  await _budgetService.setUserBudget(budget);
+                      await _budgetService.setBudget(budget);
+                      await _budgetService.setUserBudget(budget);
 
-                  // 이번 달 수입 합계 가져와서 amount 업데이트
-                  final now = DateTime.now();
-                  final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-                  final transactions = await _transactionService.getMonthlyTransactions(
-                    now.year,
-                    now.month,
-                  );
-                  final totalIncome = transactions
-                      .where((t) => t.type == '수입')
-                      .fold(0, (sum, t) => sum + t.amount);
+                      // 이번 달 수입 합계 가져와서 amount 업데이트
+                      final now = DateTime.now();
+                      final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+                      final transactions = await _transactionService
+                          .getMonthlyTransactions(now.year, now.month);
+                      final totalIncome = transactions
+                          .where((t) => t.type == '수입')
+                          .fold(0, (sum, t) => sum + t.amount);
 
-                  if (totalIncome > 0) {
-                    await _budgetService.updateBudgetAmount(month, totalIncome);
-                  }
+                      if (totalIncome > 0) {
+                        await _budgetService.updateBudgetAmount(month, totalIncome);
+                      }
 
-                  if (mounted) Navigator.pop(context);
-                },
-                child: Text('저장'),
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('홈'),
-              ),
+                      if (mounted) Navigator.pop(context);
+                    },
+                    child: Text('저장'),
+                  ),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('돌아가기'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
