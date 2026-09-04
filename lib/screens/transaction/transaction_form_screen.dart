@@ -21,8 +21,16 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
   // 드롭박스 아이템 목록
   List<String> transactionTypeList = ['수입', '지출', '저축'];
-  List<String> budgetCategoryList = ['생활비', '자유비', '저축']; // dart format off
-  List<String> transactionCategoryList = ['월급', '용돈', '식비', '교통', '쇼핑', '구독', '취미', '기타']; // dart format on
+  List<String> budgetCategoryList = ['생활비', '자유비', '저축'];
+
+  // 수입, 지출 카테고리 분리
+  List<String> incomeCategoryList = ['월급', '용돈', '기타'];
+  List<String> expenseCategoryList = ['식비', '교통', '쇼핑', '구독', '취미', '고정비', '공부', '기타'];
+  // 선택된 유형에 맞는 카테고리 목록 반환
+  List<String> get currentCategoryList =>
+      selectedTransactionType == '수입' ? incomeCategoryList : expenseCategoryList;
+
+  // List<String> transactionCategoryList = ['월급', '용돈', '식비', '교통', '쇼핑', '구독', '취미', '기타'];
 
   // 기본값 지정 및 선택된 값 저장 변수
   String selectedTransactionType = '지출';
@@ -104,6 +112,10 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                       onChanged: (String? newValue) {
                         setState(() {
                           selectedTransactionType = newValue!;
+                          // 유형 바꾸면 카테고리 초기화
+                          selectedTransactionCategory = newValue == '수입'
+                              ? incomeCategoryList[0]
+                              : expenseCategoryList[0];
                         });
                       },
                     ),
@@ -116,7 +128,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton(
                       isDense: true,
-                      items: transactionCategoryList.map<DropdownMenuItem<String>>((
+                      items: currentCategoryList.map<DropdownMenuItem<String>>((
                         String value,
                       ) {
                         return DropdownMenuItem<String>(value: value, child: Text(value));
@@ -233,7 +245,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text('홈'),
+                    child: Text('돌아가기'),
                   ),
                 ),
               ],

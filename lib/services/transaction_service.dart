@@ -37,6 +37,7 @@ class TransactionService {
         .where('userId', isEqualTo: _uid)
         .where('date', isGreaterThanOrEqualTo: start) // 이번달 1일 이후
         .where('date', isLessThan: end) // 다음달 1일 이전
+        .orderBy('date', descending: true)
         .get();
 
     return snapshot.docs

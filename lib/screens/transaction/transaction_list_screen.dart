@@ -110,23 +110,34 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 : Expanded(
                     child: ListView.builder(
                       itemCount: transactions.length,
+                      // ListView.builder itemBuilder 부분만 교체
                       itemBuilder: (context, index) {
                         final transaction = transactions[index];
-                        return ListTile(
-                          title: Text(transaction.title),
-                          subtitle: Text(transaction.category),
-                          trailing: Text('${transaction.amount}원'),
-                          onTap: () => {
-                            Navigator.push(
+                        final isIncome = transaction.type == '수입';
+                        final isSaving = transaction.type == '저축';
+                        final amountColor = isIncome
+                            ? Colors.blue
+                            : isSaving
+                            ? Colors.green
+                            : Colors.red;
+                        final amountPrefix = isIncome ? '+' : '-';
+
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 8),
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
                                     TransactionDetailScreen(transaction: transaction),
                               ),
                             ),
-                          },
-                          onLongPress: () => {
-                            showModalBottomSheet(
+                            onLongPress: () => showModalBottomSheet(
                               context: context,
                               builder: (context) => Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -135,7 +146,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                     leading: Icon(Icons.edit),
                                     title: Text('수정'),
                                     onTap: () {
-                                      Navigator.pop(context);
+                                      Navigator.pop(context); // BottomSheet 닫기
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -143,24 +154,77 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                             transaction: transaction,
                                           ),
                                         ),
-                                      ).then((_) => _loadTransactions()); // 폼에서 돌아오면 재로드
+                                      ).then((_) => _loadTransactions());
                                     },
                                   ),
                                   ListTile(
-                                    leading: Icon(Icons.delete),
-                                    title: Text('삭제'),
+                                    leading: Icon(Icons.delete, color: Colors.red),
+                                    title: Text(
+                                      '삭제',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
                                     onTap: () async {
-                                      Navigator.pop(context);
+                                      Navigator.pop(context); // BottomSheet 닫기
                                       await _transactionService.deleteTransaction(
                                         transaction.id,
                                       );
-                                      _loadTransactions(); // 목록 새로고침
+                                      _loadTransactions();
                                     },
                                   ),
                                 ],
                               ),
                             ),
-                          },
+                            child: Row(
+                              children: [
+                                // 왼쪽 : 거래명, 카테고리, 날짜
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            transaction.title,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            transaction.category,
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      SizedBox(height: 4),
+
+                                      Text(
+                                        '${transaction.date.year}.${transaction.date.month.toString().padLeft(2, '0')}.${transaction.date.day.toString().padLeft(2, '0')}',
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // 오른쪽 : 금액
+                                Text(
+                                  '$amountPrefix${transaction.amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+                                  style: TextStyle(
+                                    color: amountColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         );
                       },
                     ),

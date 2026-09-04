@@ -35,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
     '쇼핑': 0,
     '구독': 0,
     '취미': 0,
+    '공부': 0,
     '고정비': 0,
     '기타': 0,
   };
