@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:moa/constants/colors.dart';
-import 'package:moa/screens/transaction/transaction_form_screen.dart';
+import 'package:moa/screens/transaction/transaction_type_screen.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:moa/services/budget_service.dart';
@@ -201,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => TransactionFormScreen()),
+                      MaterialPageRoute(builder: (context) => TransactionTypeScreen()),
                     ).then(
                       (_) => _loadData(year: _focusedDay.year, month: _focusedDay.month),
                     );
@@ -254,11 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 daysOfWeekStyle: DaysOfWeekStyle(
                   // 요일 행 스타일
-                  weekdayStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[600],
-                  ),
+                  weekdayStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   weekendStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

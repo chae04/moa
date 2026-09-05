@@ -7,7 +7,8 @@ import 'package:moa/constants/categories.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
-  const TransactionFormScreen({super.key, this.transaction});
+  final String? type; // 거래 유형 (수입/지출/저축) - 유형 선택 화면에서 넘어올 때 사용
+  const TransactionFormScreen({super.key, this.transaction, this.type});
 
   @override
   State<TransactionFormScreen> createState() => _TransactionScreenState();
@@ -33,6 +34,16 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   @override
   void initState() {
     super.initState();
+    // 유형 선택 화면에서 넘어온 경우
+    if (widget.type != null) {
+      selectedTransactionType = widget.type!;
+      if (widget.type == '수입') {
+        selectedTransactionCategory = incomeCategoryList[0]; // 월급
+      } else if (widget.type == '지출') {
+        selectedTransactionCategory = expenseCategoryList[0]; // 식비
+      } // 저축은 카테고리 없으니까 초기화 불필요
+    }
+
     // 수정 모드면 기존 값 채우기
     if (widget.transaction != null) {
       transactionName.text = widget.transaction!.title;
@@ -116,6 +127,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
                 SizedBox(height: 20),
 
+                // 카테고리 드롭다운 (저축이면 숨김)
                 if (selectedTransactionType != '저축')
                   InputDecorator(
                     decoration: InputDecoration(labelText: '카테고리'),
@@ -141,6 +153,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   ),
                 SizedBox(height: 20),
 
+                // 예산 카테고리 드롭다운 (지출일 때만 표시)
                 if (selectedTransactionType == '지출')
                   InputDecorator(
                     decoration: InputDecoration(labelText: '예산 카테고리'),
@@ -166,6 +179,8 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   ),
 
                 SizedBox(height: 20),
+
+                // 날짜 선택
                 GestureDetector(
                   onTap: () => _selectDate(context),
                   child: InputDecorator(
@@ -176,6 +191,8 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
+
+                // 메모
                 TextField(
                   controller: transactionMemo,
                   decoration: InputDecoration(labelText: '메모'),
@@ -186,6 +203,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
             ),
             Column(
               children: [
+                // 저장 버튼
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -199,14 +217,16 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                         type: selectedTransactionType,
                         category: selectedTransactionCategory,
                         budgetCategory: selectedTransactionType == '수입'
-                            ? null
+                            ? null // 수입은 예산 카테고리 없음
                             : selectedBudgetCategory == '저축'
                             ? '저축' // 저축이면 자동으로 저축 예산으로
-                            : selectedBudgetCategory,
+                            : selectedBudgetCategory, // 지출이면 사용자가 선택한 예산 카테고리
                         date: selectedDate,
                         memo: transactionMemo.text,
                         createdAt: DateTime.now(),
                       );
+
+                      // 수입이면 예산 amount 업데이트
                       if (selectedTransactionType == '수입') {
                         final now = DateTime.now();
                         final month =
@@ -219,14 +239,14 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                         // 이번 달 수입 합계 계산
                         final totalIncome =
                             transactions
-                                .where((t) => t.type == 'income')
+                                .where((t) => t.type == '수입')
                                 .fold(0, (sum, t) => sum + t.amount) +
                             int.parse(transactionPrice.text);
 
                         await _budgetService.updateBudgetAmount(month, totalIncome);
                       }
 
-                      // Firestore에 저장
+                      // Firestore에 저장 (추가 or 수정)
                       if (widget.transaction == null) {
                         // 새 거래 추가 모드
                         await _transactionService.addTransaction(transaction);
