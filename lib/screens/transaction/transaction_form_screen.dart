@@ -115,28 +115,33 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 ),
 
                 SizedBox(height: 20),
-                InputDecorator(
-                  decoration: InputDecoration(labelText: '카테고리'),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton(
-                      isDense: true,
-                      items: currentCategoryList.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(value: value, child: Text(value));
-                      }).toList(),
-                      value: selectedTransactionCategory,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedTransactionCategory = newValue!;
-                        });
-                      },
+
+                if (selectedTransactionType != '저축')
+                  InputDecorator(
+                    decoration: InputDecoration(labelText: '카테고리'),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton(
+                        isDense: true,
+                        items: currentCategoryList.map<DropdownMenuItem<String>>((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        value: selectedTransactionCategory,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedTransactionCategory = newValue!;
+                          });
+                        },
+                      ),
                     ),
                   ),
-                ),
                 SizedBox(height: 20),
 
-                if (selectedTransactionType != '수입')
+                if (selectedTransactionType == '지출')
                   InputDecorator(
                     decoration: InputDecoration(labelText: '예산 카테고리'),
                     child: DropdownButtonHideUnderline(
@@ -195,6 +200,8 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                         category: selectedTransactionCategory,
                         budgetCategory: selectedTransactionType == '수입'
                             ? null
+                            : selectedBudgetCategory == '저축'
+                            ? '저축' // 저축이면 자동으로 저축 예산으로
                             : selectedBudgetCategory,
                         date: selectedDate,
                         memo: transactionMemo.text,
@@ -218,6 +225,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
                         await _budgetService.updateBudgetAmount(month, totalIncome);
                       }
+
                       // Firestore에 저장
                       if (widget.transaction == null) {
                         // 새 거래 추가 모드
