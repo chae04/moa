@@ -4,6 +4,7 @@ import 'package:moa/screens/transaction/transaction_form_screen.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:moa/services/budget_service.dart';
+import 'package:moa/constants/categories.dart';
 
 class HomeScreen extends StatefulWidget {
   final DateTime focusedDay;
@@ -28,29 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
   late DateTime _focusedDay; // 현재 선택된 날짜
   Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계
 
-  // 카테고리별 지출
-  Map<String, int> expenseByCategory = {
-    '식비': 0,
-    '교통': 0,
-    '쇼핑': 0,
-    '구독': 0,
-    '취미': 0,
-    '공부': 0,
-    '고정비': 0,
-    '기타': 0,
-  };
-
-  // 예산 카테고리별 사용 금액
-  Map<String, int> usedByBudgetCategory = {
-    '생활비': 0,
-    '저축': 0,
-    '자유비': 0,
-    '교통비': 0,
-    '투자': 0,
-  };
-
-  // 카테고리별 예산
-  Map<String, int> budgetByCategory = {'생활비': 0, '저축': 0, '자유비': 0, '교통비': 0, '투자': 0};
+  Map<String, int> expenseByCategory = initialExpenseByCategory;
+  Map<String, int> usedByBudgetCategory = initialBudgetCategory;
+  Map<String, int> budgetByCategory = initialBudgetCategory;
 
   @override
   void initState() {

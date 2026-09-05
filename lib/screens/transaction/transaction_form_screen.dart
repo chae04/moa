@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:moa/services/budget_service.dart';
+import 'package:moa/constants/categories.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
@@ -19,18 +20,9 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
 
-  // 드롭박스 아이템 목록
-  List<String> transactionTypeList = ['수입', '지출', '저축'];
-  List<String> budgetCategoryList = ['생활비', '자유비', '저축'];
-
-  // 수입, 지출 카테고리 분리
-  List<String> incomeCategoryList = ['월급', '용돈', '기타'];
-  List<String> expenseCategoryList = ['식비', '교통', '쇼핑', '구독', '취미', '고정비', '공부', '기타'];
   // 선택된 유형에 맞는 카테고리 목록 반환
   List<String> get currentCategoryList =>
       selectedTransactionType == '수입' ? incomeCategoryList : expenseCategoryList;
-
-  // List<String> transactionCategoryList = ['월급', '용돈', '식비', '교통', '쇼핑', '구독', '취미', '기타'];
 
   // 기본값 지정 및 선택된 값 저장 변수
   String selectedTransactionType = '지출';

@@ -3,6 +3,7 @@ import 'package:moa/models/budget_model.dart';
 import 'package:moa/services/budget_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/services/transaction_service.dart';
+import 'package:moa/constants/categories.dart';
 
 class BudgetFormScreen extends StatefulWidget {
   final BudgetModel? budget; // null이면 새 예산 추가, 있으면 기존 예산 수정
@@ -15,7 +16,8 @@ class BudgetFormScreen extends StatefulWidget {
 class _BudgetScreenState extends State<BudgetFormScreen> {
   final BudgetService _budgetService = BudgetService();
   final TransactionService _transactionService = TransactionService();
-  Map<String, int> budgetRatios = {'생활비': 0, '자유비': 0, '저축': 0};
+  // 예산 비율 초기값 : 0
+  Map<String, int> budgetRatios = {for (var c in budgetCategoryList) c: 0};
 
   // 기본값 지정 및 선택된 값 저장 변수
   String selectedBudgetCategory = '생활비';
