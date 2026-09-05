@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:moa/constants/colors.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
 
 class TransactionTypeScreen extends StatelessWidget {
