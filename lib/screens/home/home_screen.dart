@@ -112,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: EdgeInsets.all(3),
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-      child: Row(
+      child: Column(
         // mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           Text(label, style: TextStyle(color: color, fontSize: 12)),
@@ -134,11 +134,19 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       children: [
         SizedBox(width: 50, child: Text(category, style: TextStyle(fontSize: 12))),
+        SizedBox(
+          width: 90,
+          child: Text(
+            '${(budget - used).toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+            style: TextStyle(fontSize: 12),
+          ),
+        ),
         SizedBox(width: 8),
-        Expanded(
+        SizedBox(
+          width: 165,
           child: LinearProgressIndicator(
             value: budget == 0 ? 0 : used / budget,
-            minHeight: 8,
+            minHeight: 15,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -156,141 +164,196 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
+            // 상단: 년월, 거래추가 버튼
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 상단: 년월, 거래추가 버튼
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // 이전 달 이동 버튼
-                    IconButton(
-                      onPressed: () {
-                        final prev = DateTime(_focusedDay.year, _focusedDay.month - 1);
-                        if (prev.isBefore(DateTime(2026, 1, 1))) return; // 2026년 1월 이전 막기
-                        // month - 1이 0이 되면 Dart가 자동으로 전해 12월로 처리해줘
-                        setState(() => _focusedDay = prev);
-                        widget.onFocusedDayChanged(prev);
-                        _loadData(year: prev.year, month: prev.month);
-                      },
-                      icon: Icon(Icons.chevron_left),
-                    ),
-                    Text(
-                      '${_focusedDay.year}년 ${_focusedDay.month}월',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    // 다음 달 이동 버튼
-                    IconButton(
-                      onPressed: () {
-                        final next = DateTime(_focusedDay.year, _focusedDay.month + 1);
-                        final limit = DateTime(DateTime.now().year + 2, 12, 31);
-                        if (next.isAfter(limit)) return; // 2년 뒤 이후 막기
-                        // month + 1이 13이 되면 Dart가 자동으로 다음해 1월로 처리해줘
-                        setState(() => _focusedDay = next);
-                        widget.onFocusedDayChanged(next);
-                        _loadData(year: next.year, month: next.month);
-                      },
-                      icon: Icon(Icons.chevron_right),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TransactionFormScreen(),
-                          ),
-                        ).then(
-                          (_) =>
-                              _loadData(year: _focusedDay.year, month: _focusedDay.month),
-                        );
-                      },
-                      icon: Icon(Icons.add, size: 16),
-                      label: Text('추가'),
-                    ),
-                  ],
+                // 이전 달 이동 버튼
+                IconButton(
+                  onPressed: () {
+                    final prev = DateTime(_focusedDay.year, _focusedDay.month - 1);
+                    if (prev.isBefore(DateTime(2026, 1, 1))) return; // 2026년 1월 이전 막기
+                    // month - 1이 0이 되면 Dart가 자동으로 전해 12월로 처리해줘
+                    setState(() => _focusedDay = prev);
+                    widget.onFocusedDayChanged(prev);
+                    _loadData(year: prev.year, month: prev.month);
+                  },
+                  icon: Icon(Icons.chevron_left),
                 ),
-                SizedBox(height: 16),
-
-                // 수입, 지출, 저축 금액 카드
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildSummaryCard('수입', totalIncome, Colors.blue),
-                    _buildSummaryCard('지출', totalExpense, Colors.red),
-                    _buildSummaryCard('저축', totalSaving, Colors.green),
-                  ],
+                Text(
+                  '${_focusedDay.year}년 ${_focusedDay.month}월',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 16),
+                // 다음 달 이동 버튼
+                IconButton(
+                  onPressed: () {
+                    final next = DateTime(_focusedDay.year, _focusedDay.month + 1);
+                    final limit = DateTime(DateTime.now().year + 2, 12, 31);
+                    if (next.isAfter(limit)) return; // 2년 뒤 이후 막기
+                    // month + 1이 13이 되면 Dart가 자동으로 다음해 1월로 처리해줘
+                    setState(() => _focusedDay = next);
+                    widget.onFocusedDayChanged(next);
+                    _loadData(year: next.year, month: next.month);
+                  },
+                  icon: Icon(Icons.chevron_right),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => TransactionFormScreen()),
+                    ).then(
+                      (_) => _loadData(year: _focusedDay.year, month: _focusedDay.month),
+                    );
+                  },
+                  icon: Icon(Icons.add, size: 16),
+                  label: Text('추가'),
+                ),
+              ],
+            ),
+            SizedBox(height: 30),
 
-                // 캘린더
-                SizedBox(
-                  height: 350,
-                  child: TableCalendar(
-                    headerVisible: false,
-                    locale: 'ko_KR',
-                    firstDay: DateTime.utc(2026, 1, 1),
-                    lastDay: DateTime(DateTime.now().year + 2, 12, 31),
-                    focusedDay: _focusedDay,
-                    onPageChanged: (focusedDay) {
-                      setState(() => _focusedDay = focusedDay);
-                      widget.onFocusedDayChanged(focusedDay);
-                      _loadData(year: focusedDay.year, month: focusedDay.month);
-                    },
-                    calendarBuilders: CalendarBuilders(
-                      todayBuilder: (context, day, focusedDay) {
-                        final key = DateTime(day.year, day.month, day.day);
-                        final amount = dailyExpense[key];
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${day.day}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: primaryColor,
-                              ),
-                            ),
-                            if (amount != null)
-                              Text(
-                                '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
-                                style: TextStyle(fontSize: 9, color: Colors.red),
-                              ),
-                          ],
-                        );
-                      },
+            // 수입, 지출, 저축 금액 카드
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: _buildSummaryCard('수입', totalIncome, Colors.blue)),
+                Expanded(child: _buildSummaryCard('지출', totalExpense, Colors.red)),
+                Expanded(child: _buildSummaryCard('저축', totalSaving, Colors.green)),
+              ],
+            ),
+            SizedBox(height: 30),
 
-                      defaultBuilder: (context, day, focusedDay) {
-                        final key = DateTime(day.year, day.month, day.day);
-                        final amount = dailyExpense[key];
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text('${day.day}', style: TextStyle(fontSize: 12)),
-                            if (amount != null)
-                              Text(
-                                '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
-                                style: TextStyle(fontSize: 9, color: Colors.red),
-                              ),
-                          ],
-                        );
-                      },
+            // 캘린더
+            Expanded(
+              child: TableCalendar(
+                calendarFormat: CalendarFormat.month,
+                headerVisible: false,
+                locale: 'ko_KR',
+                rowHeight: 60,
+                daysOfWeekHeight: 25,
+                firstDay: DateTime.utc(2026, 1, 1),
+                lastDay: DateTime(DateTime.now().year + 2, 12, 31),
+
+                calendarStyle: CalendarStyle(
+                  // 기본 날짜 스타일
+                  defaultTextStyle: TextStyle(fontSize: 13),
+                  weekendTextStyle: TextStyle(fontSize: 13, color: Colors.red[300]),
+                  outsideTextStyle: TextStyle(fontSize: 13, color: Colors.grey[300]),
+
+                  // 오늘 날짜
+                  todayDecoration: BoxDecoration(color: Colors.transparent),
+                  todayTextStyle: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+
+                  // 셀 여백
+                  cellMargin: EdgeInsets.all(4),
+                ),
+                daysOfWeekStyle: DaysOfWeekStyle(
+                  // 요일 행 스타일
+                  weekdayStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[600],
+                  ),
+                  weekendStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[300],
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey[200]!, width: 1),
                     ),
                   ),
                 ),
-                SizedBox(height: 16),
-              ],
+
+                focusedDay: _focusedDay,
+                onPageChanged: (focusedDay) {
+                  setState(() => _focusedDay = focusedDay);
+                  widget.onFocusedDayChanged(focusedDay);
+                  _loadData(year: focusedDay.year, month: focusedDay.month);
+                },
+                calendarBuilders: CalendarBuilders(
+                  dowBuilder: (context, day) {
+                    final text = ['일', '월', '화', '수', '목', '금', '토'][day.weekday % 7];
+                    Color color = Colors.grey[600]!;
+                    if (day.weekday == DateTime.sunday) color = Colors.red[300]!;
+                    if (day.weekday == DateTime.saturday) color = Colors.blue[300]!;
+                    return Center(
+                      child: Text(
+                        text,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                    );
+                  },
+                  todayBuilder: (context, day, focusedDay) {
+                    final key = DateTime(day.year, day.month, day.day);
+                    final amount = dailyExpense[key];
+                    return Container(
+                      margin: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 6, width: 40),
+                          Text(
+                            '${day.day}',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          if (amount != null)
+                            Text(
+                              '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                              style: TextStyle(fontSize: 9, color: Colors.red),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+
+                  defaultBuilder: (context, day, focusedDay) {
+                    final key = DateTime(day.year, day.month, day.day);
+                    final amount = dailyExpense[key];
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text('${day.day}', style: TextStyle(fontSize: 12)),
+                        if (amount != null)
+                          Text(
+                            '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                            style: TextStyle(fontSize: 9, color: Colors.red),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
+            SizedBox(height: 16),
+            Divider(color: Colors.grey[200]),
+            SizedBox(height: 10),
 
             // 예산 프로그레스바
             Column(
               children: [
                 _buildProgressBar('생활비'),
-                SizedBox(height: 8),
+                SizedBox(height: 10),
                 _buildProgressBar('교통비'),
-                SizedBox(height: 8),
+                SizedBox(height: 10),
                 _buildProgressBar('자유비'),
               ],
             ),
+            SizedBox(height: 30),
           ],
         ),
       ),
