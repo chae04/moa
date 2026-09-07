@@ -243,16 +243,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   weekendTextStyle: TextStyle(fontSize: 13, color: Colors.red[300]),
                   outsideTextStyle: TextStyle(fontSize: 13, color: Colors.grey[300]),
 
-                  // 오늘 날짜
-                  todayDecoration: BoxDecoration(color: Colors.transparent),
-                  todayTextStyle: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-
                   // 셀 여백
-                  cellMargin: EdgeInsets.all(4),
+                  cellMargin: EdgeInsets.all(0),
+                  cellPadding: EdgeInsets.all(0),
                 ),
                 daysOfWeekStyle: DaysOfWeekStyle(
                   // 요일 행 스타일
@@ -299,18 +292,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     final key = DateTime(day.year, day.month, day.day);
                     final amount = dailyExpense[key];
                     return Container(
-                      margin: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          SizedBox(height: 6, width: 40),
-                          Text(
-                            '${day.day}',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          SizedBox(height: 4),
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: primaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
                           if (amount != null)
                             Text(
@@ -325,16 +327,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   defaultBuilder: (context, day, focusedDay) {
                     final key = DateTime(day.year, day.month, day.day);
                     final amount = dailyExpense[key];
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text('${day.day}', style: TextStyle(fontSize: 12)),
-                        if (amount != null)
-                          Text(
-                            '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
-                            style: TextStyle(fontSize: 9, color: Colors.red),
-                          ),
-                      ],
+                    return Container(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 6),
+                          Text('${day.day}', style: TextStyle(fontSize: 12)),
+                          if (amount != null)
+                            Text(
+                              '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                              style: TextStyle(fontSize: 9, color: Colors.red),
+                            ),
+                        ],
+                      ),
                     );
                   },
                 ),
