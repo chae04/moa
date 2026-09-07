@@ -223,7 +223,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             ),
                             child: Row(
                               children: [
-                                // 왼쪽 : 거래명, 카테고리, 날짜
+                                // 왼쪽 : 거래명, 카테고리
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,16 +246,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                             ),
                                           ),
                                         ],
-                                      ),
-
-                                      SizedBox(height: 4),
-
-                                      Text(
-                                        '${transaction.date.year}.${transaction.date.month.toString().padLeft(2, '0')}.${transaction.date.day.toString().padLeft(2, '0')}',
-                                        style: TextStyle(
-                                          color: Colors.grey[400],
-                                          fontSize: 11,
-                                        ),
                                       ),
                                     ],
                                   ),
