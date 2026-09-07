@@ -263,7 +263,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.popUntil(context, (route) => route.isFirst);
                     },
                     child: Text('돌아가기'),
                   ),

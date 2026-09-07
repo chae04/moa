@@ -10,18 +10,30 @@ class TransactionTypeScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 60.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             Text(
               '어떤 거래인가요?',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 48),
-            _buildTypeButton(context, '수입', Colors.blue),
-            SizedBox(height: 16),
-            _buildTypeButton(context, '지출', Colors.red),
-            SizedBox(height: 16),
-            _buildTypeButton(context, '저축', Colors.green),
+            Column(
+              children: [
+                _buildTypeButton(context, '수입', Colors.blue),
+                SizedBox(height: 16),
+                _buildTypeButton(context, '지출', Colors.red),
+                SizedBox(height: 16),
+                _buildTypeButton(context, '저축', Colors.green),
+              ],
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('돌아가기'),
+              ),
+            ),
           ],
         ),
       ),

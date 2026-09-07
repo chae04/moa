@@ -238,6 +238,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 lastDay: DateTime(DateTime.now().year + 2, 12, 31),
 
                 calendarStyle: CalendarStyle(
+                  outsideDaysVisible: false,
+
                   // 기본 날짜 스타일
                   defaultTextStyle: TextStyle(fontSize: 13),
                   weekendTextStyle: TextStyle(fontSize: 13, color: Colors.red[300]),
