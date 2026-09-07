@@ -34,7 +34,7 @@ class TransactionTypeScreen extends StatelessWidget {
       height: 60,
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => TransactionFormScreen(type: type)),
           );

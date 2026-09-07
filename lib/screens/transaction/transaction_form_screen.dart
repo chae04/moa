@@ -254,7 +254,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                         // 기존 거래 수정 모드
                         await _transactionService.updateTransaction(transaction);
                       }
-                      Navigator.pop(context);
+                      Navigator.popUntil(context, (route) => route.isFirst);
                     },
                     child: Text('저장'),
                   ),

@@ -14,6 +14,7 @@ class ShellScreen extends StatefulWidget {
 class _ShellScreenState extends State<ShellScreen> {
   int _currentIndex = 1; // default : home (index 1)
   DateTime _focusedDay = DateTime.now(); // 현재 보고있는 year, month 저장
+  DateTime _selectedDate = DateTime.now();
   late List<Widget> _screens;
 
   @override
@@ -28,6 +29,7 @@ class _ShellScreenState extends State<ShellScreen> {
         key: ValueKey(_focusedDay),
         year: _focusedDay.year,
         month: _focusedDay.month,
+        selectedDate: _selectedDate,
         onChanged: (year, month) {
           setState(() {
             _focusedDay = DateTime(year, month);
@@ -43,6 +45,13 @@ class _ShellScreenState extends State<ShellScreen> {
           setState(() {
             _focusedDay = day;
             _buildScreens(); // year,month 바뀌면 screens 재생성
+          });
+        },
+        onDateSelected: (date) {
+          setState(() {
+            _selectedDate = date;
+            _currentIndex = 0; // 거래목록 탭으로 이동
+            _buildScreens();
           });
         },
       ),

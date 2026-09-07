@@ -9,10 +9,12 @@ import 'package:moa/constants/categories.dart';
 class HomeScreen extends StatefulWidget {
   final DateTime focusedDay;
   final Function(DateTime) onFocusedDayChanged;
+  final Function(DateTime)? onDateSelected;
   const HomeScreen({
     super.key,
     required this.focusedDay,
     required this.onFocusedDayChanged,
+    required this.onDateSelected,
   });
 
   @override
@@ -272,6 +274,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   setState(() => _focusedDay = focusedDay);
                   widget.onFocusedDayChanged(focusedDay);
                   _loadData(year: focusedDay.year, month: focusedDay.month);
+                },
+                onDaySelected: (selectedDay, focusedDay) {
+                  widget.onDateSelected?.call(selectedDay);
                 },
                 calendarBuilders: CalendarBuilders(
                   dowBuilder: (context, day) {

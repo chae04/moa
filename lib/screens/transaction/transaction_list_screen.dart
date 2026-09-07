@@ -3,12 +3,20 @@ import 'package:moa/models/transaction_model.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:moa/screens/transaction/transaction_detail_screen.dart';
+import 'package:moa/constants/colors.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final int? year;
   final int? month;
+  final DateTime? selectedDate;
   final Function(int year, int month)? onChanged;
-  const TransactionListScreen({super.key, this.year, this.month, this.onChanged});
+  const TransactionListScreen({
+    super.key,
+    this.year,
+    this.month,
+    this.selectedDate,
+    this.onChanged,
+  });
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
@@ -20,15 +28,24 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   bool isLoading = true;
   int selectedYear = DateTime.now().year;
   int selectedMonth = DateTime.now().month;
+  late DateTime _selectedDate;
+
   // [2026년부터 현재+2까지의 개수]만큼 2026년부터 표시함. 즉, 2026년부터 내후년까지 표시.
   List<int> yearList = List.generate(DateTime.now().year - 2026 + 3, (i) => 2026 + i);
   List<int> monthList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+  // 앞뒤 3일 날짜 리스트 생성
+  List<DateTime> get _dateSlider => List.generate(7, (i) {
+    return _selectedDate.add(Duration(days: i - 3));
+  });
 
   @override
   void initState() {
     super.initState();
     selectedYear = widget.year ?? DateTime.now().year;
     selectedMonth = widget.month ?? DateTime.now().month;
+    _selectedDate = widget.selectedDate ?? DateTime.now();
+
     _loadTransactions();
   }
 
@@ -50,9 +67,75 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     if (!mounted) return;
     setState(() {
-      transactions = result;
+      // 선택된 날짜의 거래만 필터링
+      transactions = result
+          .where(
+            (t) =>
+                t.date.year == _selectedDate.year &&
+                t.date.month == _selectedDate.month &&
+                t.date.day == _selectedDate.day,
+          )
+          .toList();
       isLoading = false;
     });
+  }
+
+  // 슬라이더 위젯
+  Widget _buildDateSlider() {
+    return SizedBox(
+      height: 60,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 7,
+        itemBuilder: (context, index) {
+          final date = _dateSlider[index];
+          final isSelected =
+              date.day == _selectedDate.day &&
+              date.month == _selectedDate.month &&
+              date.year == _selectedDate.year;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedDate = date;
+                selectedYear = date.year;
+                selectedMonth = date.month;
+              });
+              _loadTransactions();
+            },
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 200), // 애니메이션 속도
+              width: 45,
+              margin: EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: isSelected ? primaryColor : Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${date.month}/${date.day}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isSelected ? Colors.white : Colors.grey[600],
+                    ),
+                  ),
+                  Text(
+                    ['일', '월', '화', '수', '목', '금', '토'][date.weekday % 7],
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -66,43 +149,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             Text('거래 목록', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             SizedBox(height: 16),
 
-            Row(
-              children: [
-                // 년 선택
-                DropdownButton<int>(
-                  value: selectedYear,
-                  items: yearList.map<DropdownMenuItem<int>>((int value) {
-                    return DropdownMenuItem(value: value, child: Text('$value년'));
-                  }).toList(),
-                  onChanged: (int? newValue) {
-                    final year = newValue!;
-                    setState(() {
-                      selectedYear = year;
-                    });
-                    widget.onChanged?.call(year, selectedMonth);
-                    _loadTransactions();
-                  },
-                ),
-
-                SizedBox(width: 12),
-
-                // 월 선택
-                DropdownButton<int>(
-                  value: selectedMonth,
-                  items: monthList.map<DropdownMenuItem<int>>((int value) {
-                    return DropdownMenuItem(value: value, child: Text('$value월'));
-                  }).toList(),
-                  onChanged: (int? newValue) {
-                    final month = newValue!;
-                    setState(() {
-                      selectedMonth = month;
-                    });
-                    widget.onChanged?.call(selectedYear, month);
-                    _loadTransactions();
-                  },
-                ),
-              ],
-            ),
+            _buildDateSlider(),
 
             // 로딩 중이면 스피너, 아니면 목록 표시
             isLoading
