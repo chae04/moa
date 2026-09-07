@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         SizedBox(width: 8),
         SizedBox(
-          width: 165,
+          width: 155,
           child: LinearProgressIndicator(
             value: budget == 0 ? 0 : used / budget,
             minHeight: 15,
