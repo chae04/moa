@@ -80,60 +80,59 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     });
   }
 
-  // 슬라이더 위젯
+  // 상단 날짜 위젯
   Widget _buildDateSlider() {
     return SizedBox(
       height: 60,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 7,
-        itemBuilder: (context, index) {
+      child: Row(
+        children: List.generate(7, (index) {
           final date = _dateSlider[index];
           final isSelected =
               date.day == _selectedDate.day &&
               date.month == _selectedDate.month &&
               date.year == _selectedDate.year;
 
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedDate = date;
-                selectedYear = date.year;
-                selectedMonth = date.month;
-              });
-              _loadTransactions();
-            },
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 200), // 애니메이션 속도
-              width: 45,
-              margin: EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: isSelected ? primaryColor : Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '${date.month}/${date.day}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isSelected ? Colors.white : Colors.grey[600],
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedDate = date;
+                  selectedYear = date.year;
+                  selectedMonth = date.month;
+                });
+                _loadTransactions();
+              },
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 200),
+                margin: EdgeInsets.symmetric(horizontal: 3), // 항목 간 미세 간격
+                decoration: BoxDecoration(
+                  color: isSelected ? primaryColor : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${date.month}/${date.day}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isSelected ? Colors.white : Colors.grey[600],
+                      ),
                     ),
-                  ),
-                  Text(
-                    ['일', '월', '화', '수', '목', '금', '토'][date.weekday % 7],
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : Colors.grey[800],
+                    Text(
+                      ['일', '월', '화', '수', '목', '금', '토'][date.weekday % 7],
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.white : Colors.grey[800],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
-        },
+        }),
       ),
     );
   }
