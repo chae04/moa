@@ -121,12 +121,36 @@ class _MypageScreenState extends State<MypageScreen> {
                     icon: Icons.logout,
                     label: '로그아웃',
                     onTap: () async {
-                      await _authService.signOut();
-                      if (mounted) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoginScreen()),
-                        );
+                      // 이중 확인 다이얼로그
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Colors.white,
+
+                          // title: Text('거래 삭제'),
+                          content: Text('로그아웃하시겠습니까?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text('취소'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text('로그아웃', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        await _authService.signOut();
+
+                        if (mounted) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => LoginScreen()),
+                          );
+                        }
                       }
                     },
                   ),
