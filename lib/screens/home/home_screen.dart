@@ -60,6 +60,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final monthStr = '${y}-${m.toString().padLeft(2, '0')}';
     final transactions = await _transactionService.getMonthlyTransactions(y, m);
 
+    // totalIncome 계산
+    final income = transactions
+        .where((t) => t.type == '수입')
+        .fold(0, (sum, t) => sum + t.amount);
+
     // 날짜별 지출 계산
     Map<DateTime, int> tempDaily = {};
     for (var t in transactions) {
@@ -71,9 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       dailyExpense = tempDaily;
-      totalIncome = transactions
-          .where((t) => t.type == '수입')
-          .fold(0, (sum, t) => sum + t.amount);
+      totalIncome = income;
       totalExpense = transactions
           .where((t) => t.type == '지출')
           .fold(0, (sum, t) => sum + t.amount);
@@ -92,21 +95,28 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
 
-    // 예산 데이터 불러오기
     final budget = await _budgetService.getBudget(monthStr);
-    if (budget != null) {
-      print('[$_focusedDay] categories: ${budget.categories}');
 
+    if (budget != null) {
+      // 해당 월 budgets 있으면 그걸로
       setState(() {
         for (var c in budget.categories) {
-          print('[$_focusedDay] category: ${c['category']}, amount: ${c['amount']}');
-
-          budgetByCategory[c['category']] = c['amount'];
+          budgetByCategory[c['category']] = (totalIncome * (c['ratio'] as int) / 100)
+              .round();
         }
       });
+    } else {
+      // 없으면 userBudgets에서 가져오기
+      final userBudget = await _budgetService.getUserBudget();
+      if (userBudget != null) {
+        setState(() {
+          for (var c in userBudget.categories) {
+            budgetByCategory[c['category']] = (totalIncome * (c['ratio'] as int) / 100)
+                .round();
+          }
+        });
+      }
     }
-    print('[$_focusedDay] budgetByCategory: $budgetByCategory');
-    print('[$_focusedDay] usedByBudgetCategory: $usedByBudgetCategory');
   }
 
   // 수입/지출/저축 카드 형태로 표시
@@ -131,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProgressBar(String category) {
     final budget = budgetByCategory[category] ?? 0;
     final used = usedByBudgetCategory[category] ?? 0;
-    final percent = budget == 0 ? 0 : ((used / budget) * 100).toInt();
+    final balance = budget - used;
 
     return Row(
       children: [
@@ -139,21 +149,18 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(
           width: 90,
           child: Text(
-            '${(budget - used).toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+            '${balance.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
             style: TextStyle(fontSize: 12),
           ),
         ),
         SizedBox(width: 8),
-        SizedBox(
-          width: 155,
+        Expanded(
           child: LinearProgressIndicator(
-            value: budget == 0 ? 0 : used / budget,
+            value: budget == 0 ? 0 : balance / budget,
             minHeight: 15,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
-        SizedBox(width: 8),
-        SizedBox(width: 40, child: Text('$percent%', style: TextStyle(fontSize: 12))),
       ],
     );
   }

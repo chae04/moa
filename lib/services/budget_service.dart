@@ -24,11 +24,18 @@ class BudgetService {
         .set(budget.toMap());
   }
 
-  // 예산 불러오기
+  // 해당 월 예산 불러오기
   Future<BudgetModel?> getBudget(String month) async {
     final doc = await _firestore.collection('budgets').doc(_getDocId(month)).get();
 
     if (!doc.exists) return null; // 설정된 예산 없으면 null 반환
+    return BudgetModel.fromMap(doc.data()!);
+  }
+
+  // 사용자 기본 예산 비율 불러오기
+  Future<BudgetModel?> getUserBudget() async {
+    final doc = await _firestore.collection('userBudgets').doc(_uid).get();
+    if (!doc.exists) return null;
     return BudgetModel.fromMap(doc.data()!);
   }
 

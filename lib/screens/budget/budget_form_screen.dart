@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:moa/models/budget_model.dart';
 import 'package:moa/services/budget_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:moa/services/transaction_service.dart';
 import 'package:moa/constants/categories.dart';
 
 class BudgetFormScreen extends StatefulWidget {
@@ -15,7 +14,6 @@ class BudgetFormScreen extends StatefulWidget {
 
 class _BudgetScreenState extends State<BudgetFormScreen> {
   final BudgetService _budgetService = BudgetService();
-  final TransactionService _transactionService = TransactionService();
   // 예산 비율 초기값 : 0
   Map<String, int> budgetRatios = {for (var c in budgetCategoryList) c: 0};
 
@@ -33,6 +31,19 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
     });
   }
 
+  // 기존 예산 비율 불러오기
+  Future<void> _loadCurrentBudget() async {
+    final userBudget = await _budgetService.getUserBudget();
+    if (userBudget != null) {
+      setState(() {
+        for (var c in userBudget.categories) {
+          budgetRatios[c['category']] = c['ratio'];
+          controllers[c['category']]?.text = c['ratio'].toString();
+        }
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -41,8 +52,15 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
       for (var c in widget.budget!.categories) {
         budgetRatios[c['category']] = c['ratio'];
       }
+    } else {
+      _loadCurrentBudget();
     }
   }
+
+  // 카테고리별 컨트롤러
+  Map<String, TextEditingController> controllers = {
+    for (var c in budgetCategoryList) c: TextEditingController(),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -69,9 +87,7 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                   }).toList(),
                   onChanged: (String? newValue) {
                     setState(() {
-                      setState(() {
-                        selectedMonth = newValue!;
-                      });
+                      selectedMonth = newValue!;
                     });
                   },
                 ),
@@ -81,6 +97,7 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
               // TextField 동적 생성
               children: budgetRatios.entries.map((entry) {
                 return TextField(
+                  controller: controllers[entry.key],
                   decoration: InputDecoration(labelText: '${entry.key} (%)'),
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
@@ -110,13 +127,6 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                           })
                           .toList();
 
-                      // BudgetModel 생성
-                      final budget = BudgetModel(
-                        userId: FirebaseAuth.instance.currentUser!.uid,
-                        month: selectedMonth,
-                        categories: categories,
-                      );
-
                       // 비율 합계 확인
                       if (totalRatio != 100) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -127,21 +137,15 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                         return;
                       }
 
+                      // BudgetModel 생성
+                      final budget = BudgetModel(
+                        userId: FirebaseAuth.instance.currentUser!.uid,
+                        month: selectedMonth,
+                        categories: categories,
+                      );
+
                       await _budgetService.setBudget(budget);
                       await _budgetService.setUserBudget(budget);
-
-                      // 이번 달 수입 합계 가져와서 amount 업데이트
-                      final now = DateTime.now();
-                      final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-                      final transactions = await _transactionService
-                          .getMonthlyTransactions(now.year, now.month);
-                      final totalIncome = transactions
-                          .where((t) => t.type == '수입')
-                          .fold(0, (sum, t) => sum + t.amount);
-
-                      if (totalIncome > 0) {
-                        await _budgetService.updateBudgetAmount(month, totalIncome);
-                      }
 
                       if (mounted) Navigator.pop(context);
                     },
