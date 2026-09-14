@@ -184,41 +184,89 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                     TransactionDetailScreen(transaction: transaction),
                               ),
                             ),
-                            onLongPress: () => showModalBottomSheet(
+                            onLongPress: () => showDialog(
                               context: context,
-                              builder: (context) => Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ListTile(
-                                    leading: Icon(Icons.edit),
-                                    title: Text('수정'),
-                                    onTap: () {
-                                      Navigator.pop(context); // BottomSheet 닫기
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => TransactionFormScreen(
-                                            transaction: transaction,
+                              builder: (context) => Dialog(
+                                backgroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0,
+                                    vertical: 20.0,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // 거래명
+                                      Text(
+                                        transaction.title,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 16),
+                                      Divider(color: Colors.grey[200]),
+
+                                      // 수정 버튼
+                                      ListTile(
+                                        leading: Container(
+                                          padding: EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Icons.edit,
+                                            color: Colors.blue,
+                                            size: 20,
                                           ),
                                         ),
-                                      ).then((_) => _loadTransactions());
-                                    },
+                                        title: Text('수정'),
+                                        onTap: () {
+                                          Navigator.pop(context);
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => TransactionFormScreen(
+                                                transaction: transaction,
+                                              ),
+                                            ),
+                                          ).then((_) => _loadTransactions());
+                                        },
+                                      ),
+
+                                      // 삭제 버튼
+                                      ListTile(
+                                        leading: Container(
+                                          padding: EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          '삭제',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                        onTap: () async {
+                                          Navigator.pop(context);
+                                          await _transactionService.deleteTransaction(
+                                            transaction.id,
+                                          );
+                                          _loadTransactions();
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                  ListTile(
-                                    leading: Icon(Icons.delete, color: Colors.red),
-                                    title: Text(
-                                      '삭제',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                    onTap: () async {
-                                      Navigator.pop(context); // BottomSheet 닫기
-                                      await _transactionService.deleteTransaction(
-                                        transaction.id,
-                                      );
-                                      _loadTransactions();
-                                    },
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                             child: Row(

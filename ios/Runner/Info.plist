@@ -45,5 +45,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<key>NSLocalNetworkUsageDescription</key>
+<string>디버깅 및 로컬 서버 통신을 위해 로컬 네트워크 권한이 필요합니다.</string>
+<key>NSBonjourServices</key>
+<array>
+    <string>_dartobservatory._tcp</string>
+</array>
 </dict>
 </plist>
