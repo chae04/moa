@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/services/transaction_service.dart';
-import 'package:moa/services/budget_service.dart';
 import 'package:moa/constants/categories.dart';
 import 'package:moa/constants/colors.dart';
+import 'package:moa/constants/styles.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
@@ -21,7 +21,6 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   final transactionName = TextEditingController();
   final transactionMemo = TextEditingController();
   final TransactionService _transactionService = TransactionService();
-  final BudgetService _budgetService = BudgetService();
 
   final _nameFocus = FocusNode();
   final _memoFocus = FocusNode();
@@ -134,15 +133,15 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 24.0),
               child: Text(
-                '거래 추가',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                widget.transaction != null ? '거래 수정' : (widget.type ?? '거래 추가'),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
             ),
             Column(
               children: [
                 TextField(
                   controller: transactionPrice,
-                  decoration: InputDecoration(labelText: '금액'),
+                  decoration: inputDecoration('금액'),
                   keyboardType: TextInputType.number,
                   autofocus: true,
                   textInputAction: TextInputAction.next,
@@ -151,7 +150,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 SizedBox(height: 20),
                 TextField(
                   controller: transactionName,
-                  decoration: InputDecoration(labelText: '거래명'),
+                  decoration: inputDecoration('거래명'),
                   focusNode: _nameFocus,
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.next,
@@ -159,83 +158,73 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 ),
                 SizedBox(height: 20),
 
-                InputDecorator(
-                  decoration: InputDecoration(labelText: '유형'),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton(
-                      isDense: true,
-                      items: transactionTypeList.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(value: value, child: Text(value));
-                      }).toList(),
-                      value: selectedTransactionType,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedTransactionType = newValue!;
-                          // 유형 바꾸면 카테고리 초기화
-                          selectedTransactionCategory = newValue == '수입'
-                              ? incomeCategoryList[0]
-                              : expenseCategoryList[0];
-                        });
-                      },
-                    ),
+                if (widget.transaction != null)
+                  DropdownButtonFormField<String>(
+                    decoration: inputDecoration('유형'),
+                    value: selectedTransactionType,
+                    dropdownColor: Colors.white, // 목록 배경색
+                    borderRadius: BorderRadius.circular(12), // 목록 모서리
+                    items: transactionTypeList.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(value: value, child: Text(value));
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedTransactionType = newValue!;
+                        selectedTransactionCategory = newValue == '수입'
+                            ? incomeCategoryList[0]
+                            : expenseCategoryList[0];
+                      });
+                    },
                   ),
-                ),
 
                 SizedBox(height: 20),
 
                 // 카테고리 드롭다운 (저축이면 숨김)
                 if (selectedTransactionType != '저축')
-                  InputDecorator(
-                    decoration: InputDecoration(labelText: '카테고리'),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton(
-                        isDense: true,
-                        items: currentCategoryList.map<DropdownMenuItem<String>>((
-                          String value,
-                        ) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        value: selectedTransactionCategory,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedTransactionCategory = newValue!;
-                          });
-                        },
-                      ),
-                    ),
+                  DropdownButtonFormField<String>(
+                    decoration: inputDecoration('카테고리'),
+                    value: selectedTransactionCategory,
+                    dropdownColor: Colors.white, // 목록 배경색
+                    borderRadius: BorderRadius.circular(12), // 목록 모서리
+                    items: currentCategoryList.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: TextStyle(fontSize: 14)),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedTransactionCategory = newValue!;
+                      });
+                    },
                   ),
                 SizedBox(height: 20),
 
                 // 예산 카테고리 드롭다운 (지출일 때만 표시)
                 if (selectedTransactionType == '지출')
-                  InputDecorator(
-                    decoration: InputDecoration(labelText: '예산 카테고리'),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton(
-                        isDense: true,
-                        items: budgetCategoryList.map<DropdownMenuItem<String>>((
-                          String value,
-                        ) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        value: selectedBudgetCategory,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedBudgetCategory = newValue!;
-                          });
-                        },
-                      ),
-                    ),
+                  DropdownButtonFormField<String>(
+                    decoration: inputDecoration('예산 카테고리'),
+                    value: selectedBudgetCategory,
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    items: budgetCategoryList.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: TextStyle(fontSize: 14)),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedBudgetCategory = newValue!;
+                      });
+                    },
                   ),
-
                 SizedBox(height: 20),
 
                 // 날짜 선택
@@ -245,9 +234,10 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                     _selectDate(context);
                   },
                   child: InputDecorator(
-                    decoration: InputDecoration(labelText: '날짜'),
+                    decoration: inputDecoration('날짜'),
                     child: Text(
-                      '${selectedDate.year}.${selectedDate.month}.${selectedDate.day}',
+                      '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
+                      style: TextStyle(fontSize: 14),
                     ),
                   ),
                 ),
@@ -256,7 +246,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 // 메모
                 TextField(
                   controller: transactionMemo,
-                  decoration: InputDecoration(labelText: '메모'),
+                  decoration: inputDecoration('메모'),
                   keyboardType: TextInputType.multiline,
                   focusNode: _memoFocus,
                   maxLines: 3,
@@ -270,56 +260,57 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      final transaction = TransactionModel(
-                        // ?: null 허용, ??: null일 때 기본값
-                        id: widget.transaction?.id ?? '', // 수정 모드면 기존 id, 추가 모드면 빈 문자열
-                        userId: FirebaseAuth.instance.currentUser!.uid,
-                        title: transactionName.text,
-                        amount: int.parse(transactionPrice.text),
-                        type: selectedTransactionType,
-                        category: selectedTransactionCategory,
-                        budgetCategory: selectedTransactionType == '수입'
-                            ? null // 수입은 예산 카테고리 없음
-                            : selectedBudgetCategory == '저축'
-                            ? '저축' // 저축이면 자동으로 저축 예산으로
-                            : selectedBudgetCategory, // 지출이면 사용자가 선택한 예산 카테고리
-                        date: selectedDate,
-                        memo: transactionMemo.text,
-                        createdAt: DateTime.now(),
-                      );
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            setState(() => isLoading = true);
+                            try {
+                              final transaction = TransactionModel(
+                                // ?: null 허용, ??: null일 때 기본값
+                                id:
+                                    widget.transaction?.id ??
+                                    '', // 수정 모드면 기존 id, 추가 모드면 빈 문자열
+                                userId: FirebaseAuth.instance.currentUser!.uid,
+                                title: transactionName.text,
+                                amount: int.parse(transactionPrice.text),
+                                type: selectedTransactionType,
+                                category: selectedTransactionCategory,
+                                budgetCategory: selectedTransactionType == '수입'
+                                    ? null // 수입은 예산 카테고리 없음
+                                    : selectedBudgetCategory == '저축'
+                                    ? '저축' // 저축이면 자동으로 저축 예산으로
+                                    : selectedBudgetCategory, // 지출이면 사용자가 선택한 예산 카테고리
+                                date: selectedDate,
+                                memo: transactionMemo.text,
+                                createdAt: DateTime.now(),
+                              );
 
-                      // 수입이면 예산 amount 업데이트
-                      if (selectedTransactionType == '수입') {
-                        final now = DateTime.now();
-                        final month =
-                            '${now.year}-${now.month.toString().padLeft(2, '0')}';
-
-                        // 이번 달 거래 목록 불러오기
-                        final transactions = await _transactionService
-                            .getMonthlyTransactions(now.year, now.month);
-
-                        // 이번 달 수입 합계 계산
-                        final totalIncome =
-                            transactions
-                                .where((t) => t.type == '수입')
-                                .fold(0, (sum, t) => sum + t.amount) +
-                            int.parse(transactionPrice.text);
-
-                        await _budgetService.updateBudgetAmount(month, totalIncome);
-                      }
-
-                      // Firestore에 저장 (추가 or 수정)
-                      if (widget.transaction == null) {
-                        // 새 거래 추가 모드
-                        await _transactionService.addTransaction(transaction);
-                      } else {
-                        // 기존 거래 수정 모드
-                        await _transactionService.updateTransaction(transaction);
-                      }
-                      Navigator.popUntil(context, (route) => route.isFirst);
-                    },
-                    child: Text('저장'),
+                              // Firestore에 저장 (추가 or 수정)
+                              if (widget.transaction == null) {
+                                // 새 거래 추가 모드
+                                await _transactionService.addTransaction(transaction);
+                              } else {
+                                // 기존 거래 수정 모드
+                                await _transactionService.updateTransaction(transaction);
+                              }
+                              Navigator.popUntil(context, (route) => route.isFirst);
+                            } catch (e) {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+                              if (mounted) setState(() => isLoading = false);
+                            }
+                          },
+                    child: isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text('저장'),
                   ),
                 ),
                 SizedBox(
