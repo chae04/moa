@@ -119,6 +119,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
       setState(() {
         selectedDate = picked;
       });
+      primaryFocus?.unfocus();
     }
   }
 
@@ -230,7 +231,6 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 // 날짜 선택
                 GestureDetector(
                   onTap: () {
-                    FocusScope.of(context).unfocus();
                     _selectDate(context);
                   },
                   child: InputDecorator(
