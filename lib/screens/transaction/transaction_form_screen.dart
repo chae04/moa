@@ -8,7 +8,8 @@ import 'package:moa/constants/categories.dart';
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
   final String? type; // 거래 유형 (수입/지출/저축) - 유형 선택 화면에서 넘어올 때 사용
-  const TransactionFormScreen({super.key, this.transaction, this.type});
+  final DateTime? date;
+  const TransactionFormScreen({super.key, this.transaction, this.type, this.date});
 
   @override
   State<TransactionFormScreen> createState() => _TransactionScreenState();
@@ -42,6 +43,10 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
       } else if (widget.type == '지출') {
         selectedTransactionCategory = expenseCategoryList[0]; // 식비
       } // 저축은 카테고리 없으니까 초기화 불필요
+    }
+
+    if (widget.date != null) {
+      selectedDate = widget.date!;
     }
 
     // 수정 모드면 기존 값 채우기

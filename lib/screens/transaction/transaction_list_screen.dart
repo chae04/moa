@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
+import 'package:moa/screens/transaction/transaction_type_screen.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:moa/screens/transaction/transaction_detail_screen.dart';
 import 'package:moa/constants/colors.dart';
@@ -146,6 +147,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             Text('거래 목록', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+
             SizedBox(height: 16),
 
             _buildDateSlider(),
@@ -344,6 +346,24 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       },
                     ),
                   ),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TransactionTypeScreen(date: _selectedDate),
+                      ),
+                    ).then((_) => _loadTransactions());
+                  },
+                  icon: Icon(Icons.add, size: 16),
+                  label: Text('추가'),
+                ),
+              ],
+            ),
           ],
         ),
       ),

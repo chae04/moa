@@ -66,9 +66,18 @@ class _ShellScreenState extends State<ShellScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          if (index == _currentIndex) {
+            // 현재 위치랑 같은 탭 누르면 '오늘' 날짜로 이동
+            setState(() {
+              _focusedDay = DateTime.now();
+              _selectedDate = DateTime.now();
+              _buildScreens();
+            });
+          } else {
+            setState(() {
+              _currentIndex = index;
+            });
+          }
         },
         selectedItemColor: primaryColor,
         items: [

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
 
 class TransactionTypeScreen extends StatelessWidget {
-  const TransactionTypeScreen({super.key});
+  final DateTime? date;
+  const TransactionTypeScreen({super.key, this.date});
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +49,9 @@ class TransactionTypeScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => TransactionFormScreen(type: type)),
+            MaterialPageRoute(
+              builder: (context) => TransactionFormScreen(type: type, date: date),
+            ),
           );
         },
         style: ElevatedButton.styleFrom(
