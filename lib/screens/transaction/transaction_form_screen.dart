@@ -4,6 +4,7 @@ import 'package:moa/models/transaction_model.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:moa/services/budget_service.dart';
 import 'package:moa/constants/categories.dart';
+import 'package:moa/constants/colors.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
@@ -24,6 +25,8 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
   final _nameFocus = FocusNode();
   final _memoFocus = FocusNode();
+
+  bool isLoading = false;
 
   // 선택된 유형에 맞는 카테고리 목록 반환
   List<String> get currentCategoryList =>
@@ -73,12 +76,46 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
   // 날짜 선택 함수
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showDialog<DateTime>(
       context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2026),
-      lastDate: DateTime(DateTime.now().year + 2, 12, 31),
+      builder: (context) {
+        DateTime tempDate = selectedDate;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CalendarDatePicker(
+                  initialDate: selectedDate,
+                  firstDate: DateTime(2026),
+                  lastDate: DateTime(DateTime.now().year + 2, 12, 31),
+                  onDateChanged: (date) {
+                    tempDate = date;
+                  },
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, tempDate),
+                      child: Text('확인', style: TextStyle(color: primaryColor)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
+
     if (picked != null) {
       setState(() {
         selectedDate = picked;
@@ -97,7 +134,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 24.0),
               child: Text(
-                '거래 입력 폼',
+                '거래 추가',
                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
             ),
@@ -203,7 +240,10 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
                 // 날짜 선택
                 GestureDetector(
-                  onTap: () => _selectDate(context),
+                  onTap: () {
+                    FocusScope.of(context).unfocus();
+                    _selectDate(context);
+                  },
                   child: InputDecorator(
                     decoration: InputDecoration(labelText: '날짜'),
                     child: Text(
