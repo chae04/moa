@@ -22,6 +22,9 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
 
+  final _nameFocus = FocusNode();
+  final _memoFocus = FocusNode();
+
   // 선택된 유형에 맞는 카테고리 목록 반환
   List<String> get currentCategoryList =>
       selectedTransactionType == '수입' ? incomeCategoryList : expenseCategoryList;
@@ -61,6 +64,13 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _nameFocus.dispose();
+    _memoFocus.dispose();
+    super.dispose();
+  }
+
   // 날짜 선택 함수
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -97,12 +107,18 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   controller: transactionPrice,
                   decoration: InputDecoration(labelText: '금액'),
                   keyboardType: TextInputType.number,
+                  autofocus: true,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) => FocusScope.of(context).requestFocus(_nameFocus),
                 ),
                 SizedBox(height: 20),
                 TextField(
                   controller: transactionName,
                   decoration: InputDecoration(labelText: '거래명'),
+                  focusNode: _nameFocus,
                   keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) => FocusScope.of(context).requestFocus(_memoFocus),
                 ),
                 SizedBox(height: 20),
 
@@ -202,7 +218,9 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   controller: transactionMemo,
                   decoration: InputDecoration(labelText: '메모'),
                   keyboardType: TextInputType.multiline,
+                  focusNode: _memoFocus,
                   maxLines: 3,
+                  textInputAction: TextInputAction.done,
                 ),
               ],
             ),

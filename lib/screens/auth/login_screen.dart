@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  final _passwordFocus = FocusNode();
   bool isLoading = false;
 
   @override
@@ -42,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: emailController, // 입력값 연결
               decoration: InputDecoration(labelText: '이메일'),
               keyboardType: TextInputType.emailAddress, // 이메일 키보드
+              onSubmitted: (_) => FocusScope.of(context).requestFocus(_passwordFocus),
             ),
 
             SizedBox(height: 16),
@@ -50,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: passwordController, // 입력값 연결
               decoration: InputDecoration(labelText: '비밀번호'),
+              focusNode: _passwordFocus,
               obscureText: true, // 비밀번호 가리기 (***)
             ),
 
