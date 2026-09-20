@@ -5,6 +5,7 @@ import 'package:moa/services/transaction_service.dart';
 import 'package:moa/constants/categories.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
+import 'package:moa/services/budget_service.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
@@ -20,6 +21,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   final transactionPrice = TextEditingController();
   final transactionName = TextEditingController();
   final transactionMemo = TextEditingController();
+  final BudgetService _budgetService = BudgetService(); // 수입 저장할 때 저축 자동 생성
   final TransactionService _transactionService = TransactionService();
 
   final _nameFocus = FocusNode();
@@ -289,6 +291,42 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                               if (widget.transaction == null) {
                                 // 새 거래 추가 모드
                                 await _transactionService.addTransaction(transaction);
+
+                                // 수입이면 설정된 비율만큼 저축 자동 생성
+                                if (selectedTransactionType == '수입') {
+                                  final userBudget = await _budgetService.getUserBudget();
+                                  if (userBudget != null) {
+                                    final savingCategory = userBudget.categories
+                                        .firstWhere(
+                                          (c) => c['category'] == '저축',
+                                          orElse: () => {'ratio': 0},
+                                        );
+                                    final savingRatio = savingCategory['ratio'] as int;
+
+                                    if (savingRatio > 0) {
+                                      final savingAmount =
+                                          (int.parse(transactionPrice.text) *
+                                                  savingRatio /
+                                                  100)
+                                              .round();
+                                      final savingTransaction = TransactionModel(
+                                        id: '',
+                                        title: '자동 저축',
+                                        userId: FirebaseAuth.instance.currentUser!.uid,
+                                        amount: savingAmount,
+                                        type: '저축',
+                                        category: '저축',
+                                        budgetCategory: '저축',
+                                        date: selectedDate,
+                                        memo: '수입의 ${savingRatio} 자동 저축',
+                                        createdAt: DateTime.now(),
+                                      );
+                                      await _transactionService.addTransaction(
+                                        savingTransaction,
+                                      );
+                                    }
+                                  }
+                                }
                               } else {
                                 // 기존 거래 수정 모드
                                 await _transactionService.updateTransaction(transaction);
