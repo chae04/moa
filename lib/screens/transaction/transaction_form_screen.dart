@@ -146,9 +146,11 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   controller: transactionPrice,
                   decoration: inputDecoration('금액'),
                   keyboardType: TextInputType.number,
-                  autofocus: true,
+                  autofocus: widget.transaction != null ? false : true,
                   textInputAction: TextInputAction.next,
                   onSubmitted: (_) => FocusScope.of(context).requestFocus(_nameFocus),
+                  readOnly: // 수입은 금액 수정 불가
+                      widget.transaction != null && widget.transaction!.type == '수입',
                 ),
                 SizedBox(height: 20),
                 TextField(
