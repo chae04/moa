@@ -210,7 +210,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 SizedBox(height: 20),
 
                 // 예산 카테고리 드롭다운 (지출일 때만 표시)
-                if (selectedTransactionType == '지출')
+                if (selectedTransactionType == '지출' || selectedTransactionType == '저축')
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('예산 카테고리'),
                     value: selectedBudgetCategory,
@@ -278,7 +278,9 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                                 title: transactionName.text,
                                 amount: int.parse(transactionPrice.text),
                                 type: selectedTransactionType,
-                                category: selectedTransactionCategory,
+                                category: selectedTransactionType == '저축'
+                                    ? '저축'
+                                    : selectedTransactionCategory,
                                 budgetCategory: selectedTransactionType == '수입'
                                     ? null // 수입은 예산 카테고리 없음
                                     : selectedBudgetCategory == '저축'
