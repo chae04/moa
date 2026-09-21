@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:moa/constants/colors.dart';
 import 'package:moa/models/budget_model.dart';
 import 'package:moa/services/budget_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/constants/categories.dart';
+import 'package:moa/constants/styles.dart';
 
 class BudgetFormScreen extends StatefulWidget {
   final BudgetModel? budget; // null이면 새 예산 추가, 있으면 기존 예산 수정
@@ -39,6 +41,8 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
         for (var c in userBudget.categories) {
           budgetRatios[c['category']] = c['ratio'];
           controllers[c['category']]?.text = c['ratio'].toString();
+          includeInDaily[c['category']] =
+              c['includeInDaily'] ?? dailyBudgetDefault.contains(c['category']);
         }
       });
     }
@@ -60,6 +64,11 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
   // 카테고리별 컨트롤러
   Map<String, TextEditingController> controllers = {
     for (var c in budgetCategoryList) c: TextEditingController(),
+  };
+
+  // 체크박스
+  Map<String, bool> includeInDaily = {
+    for (var c in budgetCategoryList) c: dailyBudgetDefault.contains(c),
   };
 
   @override
@@ -95,18 +104,46 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
             ),
             Column(
               // TextField 동적 생성
-              children: budgetRatios.entries.map((entry) {
-                return TextField(
-                  controller: controllers[entry.key],
-                  decoration: InputDecoration(labelText: '${entry.key} (%)'),
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    setState(() {
-                      budgetRatios[entry.key] = int.tryParse(value) ?? 0;
-                    });
-                  },
-                );
-              }).toList(),
+              children: [
+                // 상단 헤더
+                Row(
+                  children: [
+                    Expanded(child: SizedBox()),
+                    Text('일일 예산', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+                ...budgetRatios.entries.map((entry) {
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 15),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controllers[entry.key],
+                            decoration: inputDecoration('${entry.key} (%)'),
+                            keyboardType: TextInputType.number,
+                            onChanged: (value) {
+                              setState(() {
+                                budgetRatios[entry.key] = int.tryParse(value) ?? 0;
+                              });
+                            },
+                          ),
+                        ),
+                        Checkbox(
+                          value: includeInDaily[entry.key] ?? false,
+                          activeColor: primaryColor,
+                          onChanged: (value) {
+                            setState(() {
+                              includeInDaily[entry.key] = value!;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 20),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
             ),
             Column(
               children: [
@@ -123,6 +160,7 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                               'category': e.key,
                               'ratio': e.value,
                               'amount': 0,
+                              'includeInDaily': includeInDaily[e.key] ?? false,
                             };
                           })
                           .toList();
