@@ -16,6 +16,9 @@ const List<String> expenseCategoryList = [
 // 예산 카테고리
 const List<String> budgetCategoryList = ['생활비', '자유비', '교통비', '저축', '투자'];
 
+// 저축 제외한 예산 카테고리 (추가 저축할 때 차감할 예산 선택용)
+const List<String> budgetCategoryExcludeSaving = ['생활비', '자유비', '교통비', '투자'];
+
 // 거래 유형
 const List<String> transactionTypeList = ['수입', '지출', '저축'];
 

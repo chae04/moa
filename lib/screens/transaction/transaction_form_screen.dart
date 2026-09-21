@@ -163,7 +163,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 ),
                 SizedBox(height: 20),
 
-                if (widget.transaction != null)
+                if (widget.transaction != null) ...[
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('유형'),
                     value: selectedTransactionType,
@@ -183,11 +183,11 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                       });
                     },
                   ),
-
-                SizedBox(height: 20),
+                  SizedBox(height: 20),
+                ],
 
                 // 카테고리 드롭다운 (저축이면 숨김)
-                if (selectedTransactionType != '저축')
+                if (selectedTransactionType != '저축') ...[
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('카테고리'),
                     value: selectedTransactionCategory,
@@ -207,10 +207,35 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                       });
                     },
                   ),
-                SizedBox(height: 20),
+                  SizedBox(height: 20),
+                ],
+
+                // 저축일 때 차감할 예산 선택
+                if (selectedTransactionType == '저축') ...[
+                  DropdownButtonFormField(
+                    decoration: inputDecoration('예산 출처'),
+                    value: selectedBudgetCategory,
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    items: budgetCategoryExcludeSaving.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: TextStyle(fontSize: 14)),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedBudgetCategory = newValue!;
+                      });
+                    },
+                  ),
+                  SizedBox(height: 20),
+                ],
 
                 // 예산 카테고리 드롭다운 (지출일 때만 표시)
-                if (selectedTransactionType == '지출' || selectedTransactionType == '저축')
+                if (selectedTransactionType == '지출') ...[
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('예산 카테고리'),
                     value: selectedBudgetCategory,
@@ -230,7 +255,8 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                       });
                     },
                   ),
-                SizedBox(height: 20),
+                  SizedBox(height: 20),
+                ],
 
                 // 날짜 선택
                 GestureDetector(

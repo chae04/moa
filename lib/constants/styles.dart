@@ -4,6 +4,7 @@ import 'package:moa/constants/colors.dart';
 InputDecoration inputDecoration(String label) {
   return InputDecoration(
     labelText: label,
+    floatingLabelBehavior: FloatingLabelBehavior.always, // 항상 위에 고정
     filled: true,
     fillColor: Colors.white,
     border: OutlineInputBorder(
