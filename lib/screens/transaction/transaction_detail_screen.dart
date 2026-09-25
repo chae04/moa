@@ -16,7 +16,7 @@ class _transactionDetailScreenState extends State<TransactionDetailScreen> {
   late int transactionPrice;
   late String transactionType;
   late String transactionCategory;
-  late String? budgetCategory;
+  late String? budgetCategoryId;
   late String date;
   late String memo;
 
@@ -27,7 +27,7 @@ class _transactionDetailScreenState extends State<TransactionDetailScreen> {
     transactionPrice = widget.transaction.amount;
     transactionType = widget.transaction.type;
     transactionCategory = widget.transaction.category;
-    budgetCategory = widget.transaction.budgetCategory;
+    budgetCategoryId = widget.transaction.budgetCategoryId;
     // date = widget.transaction.date;
     date = DateFormat('yyyy.MM.dd').format(widget.transaction.date);
 
@@ -100,10 +100,10 @@ class _transactionDetailScreenState extends State<TransactionDetailScreen> {
                   SizedBox(height: 12),
 
                   // 예산 카테고리 (수입이 아닐 때만)
-                  if (budgetCategory != null)
+                  if (budgetCategoryId != null)
                     Column(
                       children: [
-                        _buildDetailRow('예산 카테고리', budgetCategory!),
+                        _buildDetailRow('예산 카테고리', budgetCategoryId!),
                         SizedBox(height: 12),
                       ],
                     ),

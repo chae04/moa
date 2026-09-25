@@ -62,7 +62,8 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
       transactionPrice.text = widget.transaction!.amount.toString();
       selectedTransactionType = widget.transaction!.type;
       selectedTransactionCategory = widget.transaction!.category;
-      selectedBudgetCategory = widget.transaction!.budgetCategory ?? '생활비'; // null일 때 기본값
+      selectedBudgetCategory =
+          widget.transaction!.budgetCategoryId ?? '생활비'; // null일 때 기본값
       selectedDate = widget.transaction!.date;
       transactionMemo.text = widget.transaction!.memo ?? ''; // null일 때 기본값
     }
@@ -307,7 +308,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                                 category: selectedTransactionType == '저축'
                                     ? '저축'
                                     : selectedTransactionCategory,
-                                budgetCategory: selectedTransactionType == '수입'
+                                budgetCategoryId: selectedTransactionType == '수입'
                                     ? null // 수입은 예산 카테고리 없음
                                     : selectedBudgetCategory == '저축'
                                     ? '저축' // 저축이면 자동으로 저축 예산으로
@@ -346,7 +347,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                                         amount: savingAmount,
                                         type: '저축',
                                         category: '저축',
-                                        budgetCategory: '저축',
+                                        budgetCategoryId: '저축',
                                         date: selectedDate,
                                         memo: '수입의 ${savingRatio} 자동 저축',
                                         createdAt: DateTime.now(),

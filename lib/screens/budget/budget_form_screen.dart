@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:moa/constants/colors.dart';
+import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/budget_model.dart';
+import 'package:moa/services/budget_category_service.dart';
 import 'package:moa/services/budget_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:moa/constants/categories.dart';
 import 'package:moa/constants/styles.dart';
 
 class BudgetFormScreen extends StatefulWidget {
-  final BudgetModel? budget; // null이면 새 예산 추가, 있으면 기존 예산 수정
-  BudgetFormScreen({super.key, this.budget});
+  BudgetFormScreen({super.key});
 
   @override
   State<BudgetFormScreen> createState() => _BudgetScreenState();
@@ -16,15 +16,17 @@ class BudgetFormScreen extends StatefulWidget {
 
 class _BudgetScreenState extends State<BudgetFormScreen> {
   final BudgetService _budgetService = BudgetService();
-  // 예산 비율 초기값 : 0
-  Map<String, int> budgetRatios = {for (var c in budgetCategoryList) c: 0};
+  final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
 
-  // 기본값 지정 및 선택된 값 저장 변수
-  String selectedBudgetCategory = '생활비';
+  List<BudgetCategoryModel> categories = [];
+  Map<String, int> budgetRatios = {};
+  Map<String, bool> includeInDaily = {};
+  Map<String, TextEditingController> controllers = {};
+  bool isLoading = true;
+
   String selectedMonth =
       '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
 
-  // 월 목록 생성
   List<String> getMonthList() {
     final now = DateTime.now();
     return List.generate(12, (i) {
@@ -33,177 +35,186 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
     });
   }
 
-  // 기존 예산 비율 불러오기
-  Future<void> _loadCurrentBudget() async {
-    final userBudget = await _budgetService.getUserBudget();
-    if (userBudget != null) {
-      setState(() {
-        for (var c in userBudget.categories) {
-          budgetRatios[c['category']] = c['ratio'];
-          controllers[c['category']]?.text = c['ratio'].toString();
-          includeInDaily[c['category']] =
-              c['includeInDaily'] ?? dailyBudgetDefault.contains(c['category']);
-        }
-      });
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    // 수정 모드면 기존 값 채우기
-    if (widget.budget != null) {
-      for (var c in widget.budget!.categories) {
-        budgetRatios[c['category']] = c['ratio'];
-      }
-    } else {
-      _loadCurrentBudget();
-    }
+    _loadCategories();
   }
 
-  // 카테고리별 컨트롤러
-  Map<String, TextEditingController> controllers = {
-    for (var c in budgetCategoryList) c: TextEditingController(),
-  };
+  Future<void> _loadCategories() async {
+    final cats = await _budgetCategoryService.getCategories();
+    final userBudget = await _budgetService.getUserBudget();
 
-  // 체크박스
-  Map<String, bool> includeInDaily = {
-    for (var c in budgetCategoryList) c: dailyBudgetDefault.contains(c),
-  };
+    setState(() {
+      categories = cats;
+      for (var c in cats) {
+        budgetRatios[c.id] = 0;
+        includeInDaily[c.id] = c.includeInDaily;
+        controllers[c.id] = TextEditingController();
+      }
+
+      // 기존 비율 채우기
+      if (userBudget != null) {
+        for (var c in userBudget.categories) {
+          final categoryId = c['categoryId'] as String?;
+          if (categoryId != null) {
+            budgetRatios[categoryId] = c['ratio'] ?? 0;
+            controllers[categoryId]?.text = (c['ratio'] ?? 0).toString();
+            includeInDaily[categoryId] = c['includeInDaily'] ?? false;
+          }
+        }
+      }
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(40.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 24.0),
-              child: Text(
-                '예산 비율 설정 폼',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-              ),
-            ),
-            InputDecorator(
-              decoration: InputDecoration(labelText: '적용 시작 월'),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedMonth,
-                  items: getMonthList().map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(value: value, child: Text(value));
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedMonth = newValue!;
-                    });
-                  },
-                ),
-              ),
-            ),
-            Column(
-              // TextField 동적 생성
-              children: [
-                // 상단 헤더
-                Row(
-                  children: [
-                    Expanded(child: SizedBox()),
-                    Text('일일 예산', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-                ...budgetRatios.entries.map((entry) {
-                  return Padding(
-                    padding: EdgeInsets.only(bottom: 15),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: controllers[entry.key],
-                            decoration: inputDecoration('${entry.key} (%)'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) {
-                              setState(() {
-                                budgetRatios[entry.key] = int.tryParse(value) ?? 0;
-                              });
-                            },
-                          ),
-                        ),
-                        Checkbox(
-                          value: includeInDaily[entry.key] ?? false,
-                          activeColor: primaryColor,
-                          onChanged: (value) {
-                            setState(() {
-                              includeInDaily[entry.key] = value!;
-                            });
-                          },
-                        ),
-                        SizedBox(height: 20),
-                      ],
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 24.0),
+                    child: Text(
+                      '예산 비율 설정',
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                     ),
-                  );
-                }).toList(),
-              ],
-            ),
-            Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final totalRatio = budgetRatios.values.fold(0, (sum, v) => sum + v);
+                  ),
 
-                      // budgetRatios를 categories 배열로 변환
-                      final List<Map<String, dynamic>> categories = budgetRatios.entries
-                          .map((e) {
-                            return <String, dynamic>{
-                              'category': e.key,
-                              'ratio': e.value,
-                              'amount': 0,
-                              'includeInDaily': includeInDaily[e.key] ?? false,
-                            };
-                          })
-                          .toList();
+                  // 적용 시작 월
+                  InputDecorator(
+                    decoration: InputDecoration(labelText: '적용 시작 월'),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedMonth,
+                        items: getMonthList().map<DropdownMenuItem<String>>((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedMonth = newValue!;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
 
-                      // 비율 합계 확인
-                      if (totalRatio != 100) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('비율 합계가 100%가 되어야 합니다. 현재: $totalRatio'),
+                  // 카테고리별 비율 입력
+                  Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: SizedBox()),
+                          Text(
+                            '일일 예산',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      ...categories.map((category) {
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 15),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: controllers[category.id],
+                                  decoration: inputDecoration('${category.name} (%)'),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      budgetRatios[category.id] =
+                                          int.tryParse(value) ?? 0;
+                                    });
+                                  },
+                                ),
+                              ),
+                              Checkbox(
+                                value: includeInDaily[category.id] ?? false,
+                                activeColor: primaryColor,
+                                onChanged: (value) {
+                                  setState(() {
+                                    includeInDaily[category.id] = value!;
+                                  });
+                                },
+                              ),
+                            ],
                           ),
                         );
-                        return;
-                      }
-
-                      // BudgetModel 생성
-                      final budget = BudgetModel(
-                        userId: FirebaseAuth.instance.currentUser!.uid,
-                        month: selectedMonth,
-                        categories: categories,
-                      );
-
-                      await _budgetService.setBudget(budget);
-                      await _budgetService.setUserBudget(budget);
-
-                      if (mounted) Navigator.pop(context);
-                    },
-                    child: Text('저장'),
+                      }).toList(),
+                    ],
                   ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text('돌아가기'),
+
+                  // 버튼
+                  Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final totalRatio = budgetRatios.values.fold(
+                              0,
+                              (sum, v) => sum + v,
+                            );
+
+                            if (totalRatio != 100) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('비율 합계가 100%가 되어야 합니다. 현재: $totalRatio'),
+                                ),
+                              );
+                              return;
+                            }
+
+                            // categories 배열로 변환
+                            final List<Map<String, dynamic>> cats = categories.map((c) {
+                              return <String, dynamic>{
+                                'categoryId': c.id,
+                                'name': c.name,
+                                'ratio': budgetRatios[c.id] ?? 0,
+                                'amount': 0,
+                                'includeInDaily': includeInDaily[c.id] ?? false,
+                              };
+                            }).toList();
+
+                            // BudgetModel 생성
+                            final budget = BudgetModel(
+                              userId: FirebaseAuth.instance.currentUser!.uid,
+                              month: selectedMonth,
+                              categories: cats, // cats 사용
+                            );
+
+                            await _budgetService.setBudget(budget);
+                            await _budgetService.setUserBudget(budget);
+
+                            if (mounted) Navigator.pop(context);
+                          },
+                          child: Text('저장'),
+                        ),
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('돌아가기'),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

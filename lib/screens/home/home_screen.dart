@@ -5,6 +5,8 @@ import 'package:moa/services/transaction_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:moa/services/budget_service.dart';
 import 'package:moa/constants/categories.dart';
+import 'package:moa/services/budget_category_service.dart';
+import 'package:moa/models/budget_category_model.dart';
 
 class HomeScreen extends StatefulWidget {
   final DateTime focusedDay;
@@ -29,12 +31,14 @@ class _HomeScreenState extends State<HomeScreen> {
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
   late DateTime _focusedDay; // 현재 선택된 날짜
+  final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
+  List<BudgetCategoryModel> budgetCategories = [];
   int dailyBudget = 0; // 일일 예산 추천
 
   Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계
   Map<String, int> expenseByCategory = initialExpenseByCategory;
-  Map<String, int> usedByBudgetCategory = initialBudgetCategory;
-  Map<String, int> budgetByCategory = initialBudgetCategory;
+  Map<String, int> usedByBudgetCategory = {};
+  Map<String, int> budgetByCategory = {};
 
   @override
   void initState() {
@@ -55,19 +59,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData({int? year, int? month}) async {
-    print('_loadData 호출: $year, $month');
     final y = year ?? _focusedDay.year;
     final m = month ?? _focusedDay.month;
+    final cats = await _budgetCategoryService.getCategories();
+
     final monthStr = '${y}-${m.toString().padLeft(2, '0')}';
+
     final transactions = await _transactionService.getMonthlyTransactions(y, m);
     final userBudget = await _budgetService.getUserBudget();
 
-    // totalIncome 계산
     final income = transactions
         .where((t) => t.type == '수입')
         .fold(0, (sum, t) => sum + t.amount);
 
-    // 날짜별 지출 계산
     Map<DateTime, int> tempDaily = {};
     for (var t in transactions) {
       if (t.type == '지출') {
@@ -76,7 +80,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
+    // ID 기준으로 초기화
+    Map<String, int> tempUsed = {for (var c in budgetCategories) c.id: 0};
+    Map<String, int> tempBudget = {for (var c in budgetCategories) c.id: 0};
+
     setState(() {
+      budgetCategories = cats;
       dailyExpense = tempDaily;
       totalIncome = income;
       totalExpense = transactions
@@ -86,58 +95,45 @@ class _HomeScreenState extends State<HomeScreen> {
           .where((t) => t.type == '저축')
           .fold(0, (sum, t) => sum + t.amount);
 
-      // usedByBudgetCategory 초기화
-      usedByBudgetCategory = {'생활비': 0, '저축': 0, '자유비': 0, '교통비': 0, '투자': 0};
-
+      // usedByBudgetCategory - ID 기준
       for (var t in transactions) {
-        if (t.budgetCategory != null) {
-          usedByBudgetCategory[t.budgetCategory!] =
-              (usedByBudgetCategory[t.budgetCategory!] ?? 0) + t.amount;
+        if (t.budgetCategoryId != null) {
+          tempUsed[t.budgetCategoryId!] = (tempUsed[t.budgetCategoryId!] ?? 0) + t.amount;
         }
       }
+      usedByBudgetCategory = tempUsed;
     });
 
     // 예산 불러오기
     final budget = await _budgetService.getBudget(monthStr);
-    if (budget != null) {
-      // 해당 월 budgets 있으면 그걸로
+    final budgetData = budget ?? userBudget;
+
+    if (budgetData != null) {
       setState(() {
-        for (var c in budget.categories) {
-          budgetByCategory[c['category']] = (totalIncome * (c['ratio'] as int) / 100)
-              .round();
-        }
-      });
-    } else {
-      // 없으면 userBudgets에서 가져오기
-      final userBudget = await _budgetService.getUserBudget();
-      if (userBudget != null) {
-        setState(() {
-          for (var c in userBudget.categories) {
-            budgetByCategory[c['category']] = (totalIncome * (c['ratio'] as int) / 100)
-                .round();
+        for (var c in budgetData.categories) {
+          final categoryId = c['categoryId'] as String?;
+          if (categoryId != null) {
+            tempBudget[categoryId] = (income * (c['ratio'] as int) / 100).round();
           }
-        });
-      }
+        }
+        budgetByCategory = tempBudget;
+      });
     }
 
     // dailyBudget 계산
     if (userBudget != null) {
-      // includeIndaily가 true인 카테고리 잔액 합산
       int totalRemaining = 0;
       for (var c in userBudget.categories) {
-        if (c['includeInDaily'] == true) {
-          final category = c['category'] as String;
-          final budget = budgetByCategory[category] ?? 0;
-          final used = usedByBudgetCategory[category] ?? 0;
-          totalRemaining += (budget - used);
+        final categoryId = c['categoryId'] as String?;
+        if (categoryId != null && c['includeInDaily'] == true) {
+          final b = budgetByCategory[categoryId] ?? 0;
+          final used = usedByBudgetCategory[categoryId] ?? 0;
+          totalRemaining += (b - used);
         }
       }
-
-      // 남은 일수 계산
       final now = DateTime.now();
-      final lastDay = DateTime(now.year, now.month + 1, 0); // 이번달 말일
+      final lastDay = DateTime(now.year, now.month + 1, 0);
       final remainingDays = lastDay.day - now.day + 1;
-
       setState(() {
         dailyBudget = remainingDays > 0 ? (totalRemaining / remainingDays).round() : 0;
       });
@@ -163,14 +159,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProgressBar(String category) {
-    final budget = budgetByCategory[category] ?? 0;
-    final used = usedByBudgetCategory[category] ?? 0;
+  Widget _buildProgressBar(String categoryId, String categoryName) {
+    final budget = budgetByCategory[categoryId] ?? 0;
+    final used = usedByBudgetCategory[categoryId] ?? 0;
     final balance = budget - used;
 
     return Row(
       children: [
-        SizedBox(width: 50, child: Text(category, style: TextStyle(fontSize: 12))),
+        SizedBox(width: 50, child: Text(categoryName, style: TextStyle(fontSize: 12))),
         SizedBox(
           width: 90,
           child: Text(
@@ -181,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(width: 8),
         Expanded(
           child: LinearProgressIndicator(
-            value: budget == 0 ? 0 : balance / budget,
+            value: budget == 0 ? 0 : (balance / budget).clamp(0.0, 1.0),
             minHeight: 15,
             borderRadius: BorderRadius.circular(4),
           ),
@@ -385,13 +381,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // 예산 프로그레스바
             Column(
-              children: [
-                _buildProgressBar('생활비'),
-                SizedBox(height: 10),
-                _buildProgressBar('교통비'),
-                SizedBox(height: 10),
-                _buildProgressBar('자유비'),
-              ],
+              children: budgetCategories.map((category) {
+                return Column(
+                  children: [
+                    _buildProgressBar(category.id, category.name),
+                    SizedBox(height: 10),
+                  ],
+                );
+              }).toList(),
             ),
             SizedBox(height: 30),
 

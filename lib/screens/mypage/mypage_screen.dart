@@ -155,6 +155,46 @@ class _MypageScreenState extends State<MypageScreen> {
                     },
                   ),
 
+                  // 회원 탈퇴 버튼
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            title: Text('회원탈퇴'),
+                            content: Text('탈퇴하면 모든 데이터가 삭제되며\n복구할 수 없습니다.\n정말 탈퇴하시겠습니까?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text('취소'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text('탈퇴', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          await _authService.deleteAccount();
+                          if (mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => LoginScreen()),
+                            );
+                          }
+                        }
+                      },
+                      child: Text(
+                        '회원탈퇴    ',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      ),
+                    ),
+                  ),
                   SizedBox(height: 24),
                 ],
               ),

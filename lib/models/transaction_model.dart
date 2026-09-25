@@ -7,7 +7,7 @@ class TransactionModel {
   int amount;
   String type; // income / expense / saving
   String category;
-  String? budgetCategory; // expense / saving만 사용, 수입은 null (? : null 허용)
+  String? budgetCategoryId; // expense / saving만 사용, 수입은 null (? : null 허용)
   DateTime date;
   String? memo;
   final DateTime createdAt;
@@ -20,7 +20,7 @@ class TransactionModel {
     required this.amount,
     required this.type,
     required this.category,
-    this.budgetCategory, // null 가능
+    this.budgetCategoryId, // null 가능
     required this.date,
     this.memo,
     required this.createdAt,
@@ -35,7 +35,7 @@ class TransactionModel {
       'amount': amount,
       'type': type,
       'category': category,
-      'budgetCategory': budgetCategory,
+      'budgetCategoryId': budgetCategoryId,
       'date': date,
       'memo': memo,
       'createdAt': createdAt,
@@ -52,7 +52,7 @@ class TransactionModel {
       amount: map['amount'],
       type: map['type'],
       category: map['category'],
-      budgetCategory: map['budgetCategory'],
+      budgetCategoryId: map['budgetCategoryId'],
       date: (map['date'] as Timestamp).toDate(),
       memo: map['memo'],
       createdAt: (map['createdAt'] as Timestamp).toDate(),
