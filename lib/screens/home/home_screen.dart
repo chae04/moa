@@ -29,8 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
   late DateTime _focusedDay; // 현재 선택된 날짜
-  Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계
+  int dailyBudget = 0; // 일일 예산 추천
 
+  Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계
   Map<String, int> expenseByCategory = initialExpenseByCategory;
   Map<String, int> usedByBudgetCategory = initialBudgetCategory;
   Map<String, int> budgetByCategory = initialBudgetCategory;
@@ -59,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final m = month ?? _focusedDay.month;
     final monthStr = '${y}-${m.toString().padLeft(2, '0')}';
     final transactions = await _transactionService.getMonthlyTransactions(y, m);
+    final userBudget = await _budgetService.getUserBudget();
 
     // totalIncome 계산
     final income = transactions
@@ -95,8 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
 
+    // 예산 불러오기
     final budget = await _budgetService.getBudget(monthStr);
-
     if (budget != null) {
       // 해당 월 budgets 있으면 그걸로
       setState(() {
@@ -116,6 +118,29 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         });
       }
+    }
+
+    // dailyBudget 계산
+    if (userBudget != null) {
+      // includeIndaily가 true인 카테고리 잔액 합산
+      int totalRemaining = 0;
+      for (var c in userBudget.categories) {
+        if (c['includeInDaily'] == true) {
+          final category = c['category'] as String;
+          final budget = budgetByCategory[category] ?? 0;
+          final used = usedByBudgetCategory[category] ?? 0;
+          totalRemaining += (budget - used);
+        }
+      }
+
+      // 남은 일수 계산
+      final now = DateTime.now();
+      final lastDay = DateTime(now.year, now.month + 1, 0); // 이번달 말일
+      final remainingDays = lastDay.day - now.day + 1;
+
+      setState(() {
+        dailyBudget = remainingDays > 0 ? (totalRemaining / remainingDays).round() : 0;
+      });
     }
   }
 
@@ -369,6 +394,24 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             SizedBox(height: 30),
+
+            // 일일 예산 추천
+            Divider(color: Colors.grey[200]),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('일일 추천 예산', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                Text(
+                  '${dailyBudget.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
