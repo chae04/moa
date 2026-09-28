@@ -3,6 +3,7 @@ import 'package:moa/constants/colors.dart';
 import 'package:moa/services/auth_service.dart';
 import 'package:moa/screens/auth/login_screen.dart';
 import 'package:moa/screens/budget/budget_form_screen.dart';
+import 'package:moa/screens/budget/budget_category_screen.dart';
 
 class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
@@ -117,6 +118,18 @@ class _MypageScreenState extends State<MypageScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => BudgetFormScreen()),
+                          );
+                        },
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.category_outlined,
+                        label: '예산 카테고리 관리',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BudgetCategoryScreen(),
+                            ),
                           );
                         },
                       ),

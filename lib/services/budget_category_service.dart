@@ -34,6 +34,11 @@ class BudgetCategoryService {
         .update(category.toMap());
   }
 
+  // 카테고리 삭제
+  Future<void> deleteCategory(String id) async {
+    await _firestore.collection('budgetCategories').doc(id).delete();
+  }
+
   // 기본 카테고리 초기 생성 (회원가입 시)
   Future<void> createDefaultCategories() async {
     final defaults = [
