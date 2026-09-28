@@ -23,7 +23,13 @@ class BudgetCategoryService {
 
   // 카테고리 추가
   Future<void> addCategory(BudgetCategoryModel category) async {
-    await _firestore.collection('budgetCategories').add(category.toMap());
+    print('addCategory 호출: ${category.name}');
+
+    final result = await _firestore.collection('budgetCategories').add({
+      ...category.toMap(),
+      'userId': _uid,
+    });
+    print('저장 완료: ${result.id}');
   }
 
   // 카테고리 이름 수정
