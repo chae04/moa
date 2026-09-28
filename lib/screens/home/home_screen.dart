@@ -112,8 +112,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (budgetData != null) {
       setState(() {
         for (var c in budgetData.categories) {
-          print('category: $c');
-
           final categoryId = c['categoryId'] as String?;
           if (categoryId != null) {
             tempBudget[categoryId] = (income * (c['ratio'] as int) / 100).round();

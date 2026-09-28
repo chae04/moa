@@ -11,13 +11,14 @@ class BudgetCategoryService {
   // 카테고리 목록 불러오기
   Future<List<BudgetCategoryModel>> getCategories() async {
     final snapshot = await _firestore
-        .collectionGroup('budgetCategories')
+        .collection('budgetCategories')
         .where('userId', isEqualTo: _uid)
         .orderBy('order')
         .get();
 
     return snapshot.docs
         .map((doc) => BudgetCategoryModel.fromMap(doc.id, doc.data()))
+        .where((c) => c.isDeleted != true) // isDeleted가 없거나 false이면 포함
         .toList();
   }
 
@@ -42,7 +43,10 @@ class BudgetCategoryService {
 
   // 카테고리 삭제
   Future<void> deleteCategory(String id) async {
-    await _firestore.collection('budgetCategories').doc(id).delete();
+    print('삭제 시도: $id');
+    // 삭제 대신 isDeleted: true로 표시
+    await _firestore.collection('budgetCategories').doc(id).update({'isDeleted': true});
+    print('삭제 완료');
   }
 
   // 기본 카테고리 초기 생성 (회원가입 시)

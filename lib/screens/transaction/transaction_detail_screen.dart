@@ -1,16 +1,18 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/transaction_model.dart';
+import 'package:moa/services/budget_category_service.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final TransactionModel transaction;
   const TransactionDetailScreen({super.key, required this.transaction});
 
   @override
-  State<TransactionDetailScreen> createState() => _transactionDetailScreenState();
+  State<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
 }
 
-class _transactionDetailScreenState extends State<TransactionDetailScreen> {
+class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   // 변수 선언
   late String transactionName;
   late int transactionPrice;
@@ -20,6 +22,9 @@ class _transactionDetailScreenState extends State<TransactionDetailScreen> {
   late String date;
   late String memo;
 
+  List<BudgetCategoryModel> budgetCategories = [];
+  final BudgetCategoryService _budgetCategoryService = BudgetCategoryService(); // 수정
+
   @override
   void initState() {
     super.initState();
@@ -28,10 +33,33 @@ class _transactionDetailScreenState extends State<TransactionDetailScreen> {
     transactionType = widget.transaction.type;
     transactionCategory = widget.transaction.category;
     budgetCategoryId = widget.transaction.budgetCategoryId;
-    // date = widget.transaction.date;
     date = DateFormat('yyyy.MM.dd').format(widget.transaction.date);
-
     memo = widget.transaction.memo ?? '';
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final cats = await _budgetCategoryService.getCategories();
+    setState(() {
+      budgetCategories = cats;
+    });
+  }
+
+  // budgetCategory 이름 찾기
+  String get budgetCategoryName {
+    if (budgetCategoryId == null) return '';
+    final cat = budgetCategories.firstWhere(
+      (c) => c.id == budgetCategoryId,
+      orElse: () => BudgetCategoryModel(
+        id: '',
+        userId: '',
+        name: '삭제된 카테고리',
+        order: 0,
+        includeInDaily: false,
+        showOnHome: false,
+      ),
+    );
+    return cat.name;
   }
 
   @override
@@ -103,7 +131,7 @@ class _transactionDetailScreenState extends State<TransactionDetailScreen> {
                   if (budgetCategoryId != null)
                     Column(
                       children: [
-                        _buildDetailRow('예산 카테고리', budgetCategoryId!),
+                        _buildDetailRow('예산 카테고리', budgetCategoryName),
                         SizedBox(height: 12),
                       ],
                     ),

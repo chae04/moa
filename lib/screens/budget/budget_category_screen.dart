@@ -3,6 +3,7 @@ import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
 import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/services/budget_category_service.dart';
+import 'package:moa/screens/budget/budget_form_screen.dart';
 
 class BudgetCategoryScreen extends StatefulWidget {
   const BudgetCategoryScreen({super.key});
@@ -96,8 +97,22 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                   );
                   await _budgetCategoryService.addCategory(newCategory);
                 }
-                Navigator.pop(context);
-                await _loadCategories();
+
+                // 카테고리 추가하면 예산 비율 설정 폼으로 안내
+                if (!isEdit) {
+                  Navigator.pop(context);
+                  await _loadCategories();
+                  if (mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => BudgetFormScreen()),
+                    ).then((_) => _loadCategories());
+                  }
+                } else {
+                  // 수정은 그냥 닫기
+                  Navigator.pop(context);
+                  await _loadCategories();
+                }
               },
               child: Text(isEdit ? '수정' : '추가', style: TextStyle(color: primaryColor)),
             ),
@@ -135,7 +150,13 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
 
     if (confirm == true) {
       await _budgetCategoryService.deleteCategory(category.id);
-      _loadCategories();
+      await _loadCategories();
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => BudgetFormScreen()),
+        ).then((_) => _loadCategories());
+      }
     }
   }
 
