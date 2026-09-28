@@ -201,13 +201,96 @@ class _MypageScreenState extends State<MypageScreen> {
                               ),
                             );
                             if (confirm == true) {
-                              await Future.delayed(
-                                Duration(milliseconds: 100),
-                              ); // 다이얼로그 닫힐 시간
+                              final passwordController = TextEditingController();
+
+                              final password = await showDialog<String>(
+                                context: context,
+                                builder: (context) => StatefulBuilder(
+                                  builder: (context, setDialogState) {
+                                    String? errorText;
+                                    bool isVerifying = false;
+
+                                    return StatefulBuilder(
+                                      builder: (context, setDialogState) {
+                                        return AlertDialog(
+                                          backgroundColor: Colors.white,
+                                          title: Text('비밀번호 확인'),
+                                          content: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              TextField(
+                                                controller: passwordController,
+                                                decoration: InputDecoration(
+                                                  labelText: '비밀번호',
+                                                  errorText: errorText,
+                                                ),
+                                                obscureText: true,
+                                                autofocus: true,
+                                              ),
+                                            ],
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: Text('취소'),
+                                            ),
+                                            TextButton(
+                                              onPressed: isVerifying
+                                                  ? null
+                                                  : () async {
+                                                      if (passwordController.text.isEmpty)
+                                                        return;
+                                                      setDialogState(() {
+                                                        isVerifying = true;
+                                                        errorText = null;
+                                                      });
+                                                      try {
+                                                        await _authService.reauthenticate(
+                                                          passwordController.text,
+                                                        );
+                                                        Navigator.pop(
+                                                          context,
+                                                          passwordController.text,
+                                                        );
+                                                      } catch (e) {
+                                                        setDialogState(() {
+                                                          isVerifying = false;
+                                                          errorText = '비밀번호가 틀렸습니다.';
+                                                        });
+                                                      }
+                                                    },
+                                              child: isVerifying
+                                                  ? SizedBox(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child: CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                    )
+                                                  : Text(
+                                                      '확인',
+                                                      style: TextStyle(
+                                                        color: primaryColor,
+                                                      ),
+                                                    ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              );
+
+                              if (password == null || password.isEmpty) return;
+
+                              // await Future.delayed(
+                              //   Duration(milliseconds: 100),
+                              // ); // 다이얼로그 닫힐 시간
 
                               setState(() => isDeleting = true);
                               try {
-                                await _authService.deleteAccount();
+                                await _authService.deleteAccount(password);
                                 if (mounted) {
                                   Navigator.of(context).pushAndRemoveUntil(
                                     MaterialPageRoute(
@@ -217,9 +300,14 @@ class _MypageScreenState extends State<MypageScreen> {
                                   );
                                 }
                               } catch (e) {
+                                String message = '탈퇴 실패';
+                                if (e.toString().contains('wrong-password') ||
+                                    e.toString().contains('invalid-credential')) {
+                                  message = '비밀번호가 틀렸습니다.';
+                                }
                                 ScaffoldMessenger.of(
                                   context,
-                                ).showSnackBar(SnackBar(content: Text('탈퇴 실패: $e')));
+                                ).showSnackBar(SnackBar(content: Text(message)));
                                 if (mounted) setState(() => isDeleting = false);
                               }
                             }

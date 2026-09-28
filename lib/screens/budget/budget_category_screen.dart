@@ -30,68 +30,79 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
     });
   }
 
-  // 카테고리 추가 다이얼로그
-  Future<void> _showAddDialog() async {
-    final controller = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: Text('카테고리 추가'),
-        content: TextField(
-          controller: controller,
-          decoration: inputDecoration('카테고리 이름'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('취소')),
-          TextButton(
-            onPressed: () async {
-              if (controller.text.isEmpty) return;
-              final newCategory = BudgetCategoryModel(
-                id: '',
-                userId: '',
-                name: controller.text,
-                order: categories.length,
-                includeInDaily: false,
-              );
-              await _budgetCategoryService.addCategory(newCategory);
-              Navigator.pop(context);
-              _loadCategories();
-            },
-            child: Text('추가', style: TextStyle(color: primaryColor)),
-          ),
-        ],
-      ),
-    );
-  }
+  // 카테고리 추가/수정 다이얼로그
+  Future<void> _showCategoryDialog({BudgetCategoryModel? category}) async {
+    final controller = TextEditingController(text: category?.name ?? '');
+    bool showOnHome = category?.showOnHome ?? false;
+    final isEdit = category != null;
 
-  // 카테고리 이름 수정 다이얼로그
-  Future<void> _showEditDialog(BudgetCategoryModel category) async {
-    final controller = TextEditingController(text: category.name);
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: Text('카테고리 수정'),
-        content: TextField(
-          controller: controller,
-          decoration: inputDecoration('카테고리 이름'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('취소')),
-          TextButton(
-            onPressed: () async {
-              if (controller.text.isEmpty) return;
-              category.name = controller.text;
-              await _budgetCategoryService.updateCategory(category);
-              Navigator.pop(context);
-              _loadCategories();
-            },
-            child: Text('수정', style: TextStyle(color: primaryColor)),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(isEdit ? '카테고리 수정' : '카테고리 추가'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                decoration: inputDecoration('카테고리 이름'),
+                autofocus: true,
+              ),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: showOnHome,
+                    activeColor: primaryColor,
+                    onChanged: (value) {
+                      setDialogState(() => showOnHome = value!);
+                    },
+                  ),
+                  Text('홈화면에 표시', style: TextStyle(fontSize: 14)),
+                ],
+              ),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('취소')),
+            TextButton(
+              onPressed: () async {
+                if (controller.text.isEmpty) return;
+
+                // 홈화면 5개 제한
+                if (showOnHome &&
+                    !(category?.showOnHome ?? false) &&
+                    categories.where((c) => c.showOnHome).length >= 5) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('홈화면에는 최대 5개까지 표시할 수 있어요')));
+                  return;
+                }
+
+                if (isEdit) {
+                  category!.name = controller.text;
+                  category.showOnHome = showOnHome;
+                  await _budgetCategoryService.updateCategory(category);
+                } else {
+                  final newCategory = BudgetCategoryModel(
+                    id: '',
+                    userId: '',
+                    name: controller.text,
+                    order: categories.length,
+                    includeInDaily: false,
+                    showOnHome: showOnHome,
+                  );
+                  await _budgetCategoryService.addCategory(newCategory);
+                }
+                Navigator.pop(context);
+                await _loadCategories();
+              },
+              child: Text(isEdit ? '수정' : '추가', style: TextStyle(color: primaryColor)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -147,7 +158,7 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 ElevatedButton.icon(
-                  onPressed: _showAddDialog,
+                  onPressed: _showCategoryDialog,
                   icon: Icon(Icons.add, size: 16),
                   label: Text('추가'),
                 ),
@@ -166,13 +177,32 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                       itemBuilder: (context, index) {
                         final category = categories[index];
                         return ListTile(
-                          leading: Icon(Icons.label_outline, color: primaryColor),
+                          leading: GestureDetector(
+                            onTap: () async {
+                              if (!category.showOnHome &&
+                                  categories.where((c) => c.showOnHome).length >= 5) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('홈화면에는 최대 5개까지 표시할 수 있어요')),
+                                );
+                                return;
+                              }
+                              category.showOnHome = !category.showOnHome;
+                              await _budgetCategoryService.updateCategory(category);
+                              _loadCategories();
+                            },
+                            child: Icon(
+                              Icons.label,
+                              color: category.showOnHome
+                                  ? primaryColor
+                                  : Colors.grey[300],
+                            ),
+                          ),
                           title: Text(category.name),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                onPressed: () => _showEditDialog(category),
+                                onPressed: () => _showCategoryDialog(category: category),
                                 icon: Icon(Icons.edit_outlined, color: Colors.grey),
                               ),
                               IconButton(

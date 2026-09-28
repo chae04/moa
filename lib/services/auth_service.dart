@@ -66,7 +66,9 @@ class AuthService {
   }
 
   // 탈퇴 시 연결된 데이터 삭제
-  Future<void> deleteAccount() async {
+  Future<void> deleteAccount(String password) async {
+    await reauthenticate(password); // 재인증
+
     final uid = _auth.currentUser!.uid;
 
     final transactions = await _firestore
@@ -98,5 +100,15 @@ class AuthService {
     await _firestore.collection('users').doc(uid).delete();
 
     await _auth.currentUser!.delete();
+  }
+
+  // 탈퇴 전 재인증 (비밀번호)
+  Future<void> reauthenticate(String password) async {
+    final user = _auth.currentUser!;
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: password,
+    );
+    await user.reauthenticateWithCredential(credential);
   }
 }

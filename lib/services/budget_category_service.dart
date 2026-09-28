@@ -42,8 +42,8 @@ class BudgetCategoryService {
   // 기본 카테고리 초기 생성 (회원가입 시)
   Future<void> createDefaultCategories() async {
     final defaults = [
-      {'name': '생활비', 'order': 0, 'includeInDaily': true},
-      {'name': '자유비', 'order': 2, 'includeInDaily': false},
+      {'name': '생활비', 'order': 0, 'includeInDaily': true, 'showOnHome': true},
+      {'name': '자유비', 'order': 2, 'includeInDaily': false, 'showOnHome': true},
     ];
 
     for (var c in defaults) {

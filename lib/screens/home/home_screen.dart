@@ -85,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Map<String, int> tempBudget = {for (var c in budgetCategories) c.id: 0};
 
     setState(() {
-      budgetCategories = cats;
+      budgetCategories = cats.where((c) => c.showOnHome).toList();
       dailyExpense = tempDaily;
       totalIncome = income;
       totalExpense = transactions
@@ -376,8 +376,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             SizedBox(height: 16),
-            Divider(color: Colors.grey[200]),
-            SizedBox(height: 10),
+
+            if (budgetCategories.isNotEmpty) ...[
+              Divider(color: Colors.grey[200]),
+              SizedBox(height: 10),
+            ],
 
             // 예산 프로그레스바
             Column(

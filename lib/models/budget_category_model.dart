@@ -4,6 +4,7 @@ class BudgetCategoryModel {
   String name;
   int order;
   bool includeInDaily;
+  bool showOnHome;
 
   BudgetCategoryModel({
     required this.id,
@@ -11,6 +12,7 @@ class BudgetCategoryModel {
     required this.name,
     required this.order,
     required this.includeInDaily,
+    required this.showOnHome,
   });
 
   Map<String, dynamic> toMap() {
@@ -19,6 +21,7 @@ class BudgetCategoryModel {
       'name': name,
       'order': order,
       'includeInDaily': includeInDaily,
+      'showOnHome': showOnHome,
     };
   }
 
@@ -29,6 +32,7 @@ class BudgetCategoryModel {
       name: map['name'],
       order: map['order'],
       includeInDaily: map['includeInDaily'] ?? false,
+      showOnHome: map['showOnHome'] as bool? ?? true,
     );
   }
 }
