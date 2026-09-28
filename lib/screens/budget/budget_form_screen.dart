@@ -8,8 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/constants/styles.dart';
 
 class BudgetFormScreen extends StatefulWidget {
-  BudgetFormScreen({super.key});
-
   @override
   State<BudgetFormScreen> createState() => _BudgetScreenState();
 }
@@ -251,7 +249,9 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                             await _budgetService.setBudget(budget);
                             await _budgetService.setUserBudget(budget);
 
-                            if (mounted) Navigator.pop(context);
+                            if (mounted) {
+                              Navigator.pop(context);
+                            }
                           },
                           child: Text('저장'),
                         ),

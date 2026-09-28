@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:moa/services/auth_service.dart';
+import 'package:moa/screens/auth/signup_budget_screen.dart';
 
 // StatefulWidget: 상태(데이터)가 변하는 화면에서 사용
 // 회원가입 화면은 텍스트 입력값이 변하니까 StatefulWidget 사용
@@ -16,7 +16,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final passwordController = TextEditingController();
   final passwordCheckController = TextEditingController();
   final nicknameController = TextEditingController();
-  final AuthService _authService = AuthService();
   bool isLoading = false;
 
   @override
@@ -98,23 +97,20 @@ class _SignupScreenState extends State<SignupScreen> {
                             return;
                           }
                           print('validation 통과');
-                          try {
-                            setState(() => isLoading = true);
-                            await _authService.signUp(
-                              email: emailController.text,
-                              password: passwordController.text,
-                              nickname: nicknameController.text,
-                            );
-                            print('회원가입 성공');
-                            if (mounted) Navigator.pop(context); // 회원가입 후 로그인 화면으로 이동
-                          } catch (e) {
-                            print('에러: $e');
-                            ScaffoldMessenger.of(
+
+                          if (mounted) {
+                            Navigator.push(
                               context,
-                            ).showSnackBar(SnackBar(content: Text('회원가입 실패: $e')));
-                          } finally {
-                            if (mounted) setState(() => isLoading = false);
+                              MaterialPageRoute(
+                                builder: (context) => SignupBudgetScreen(
+                                  email: emailController.text,
+                                  password: passwordController.text,
+                                  nickname: nicknameController.text,
+                                ),
+                              ),
+                            );
                           }
+                          ;
                         },
                   child: isLoading
                       ? SizedBox(
@@ -125,7 +121,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                      : Text('회원가입'),
+                      : Text('다음'),
                 ),
               ],
             ),

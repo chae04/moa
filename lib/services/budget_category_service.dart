@@ -40,14 +40,16 @@ class BudgetCategoryService {
   }
 
   // 기본 카테고리 초기 생성 (회원가입 시)
-  Future<void> createDefaultCategories() async {
-    final defaults = [
-      {'name': '생활비', 'order': 0, 'includeInDaily': true, 'showOnHome': true},
-      {'name': '자유비', 'order': 2, 'includeInDaily': false, 'showOnHome': true},
-    ];
-
-    for (var c in defaults) {
-      await _firestore.collection('budgetCategories').add({'userId': _uid, ...c});
+  Future<void> createDefaultCategories(List<Map<String, dynamic>> categories) async {
+    int order = 0;
+    for (var c in categories) {
+      await _firestore.collection('budgetCategories').add({
+        'userId': _uid,
+        'name': c['name'],
+        'order': order++,
+        'includeInDaily': c['includeInDaily'] ?? false,
+        'showOnHome': true,
+      });
     }
   }
 }
