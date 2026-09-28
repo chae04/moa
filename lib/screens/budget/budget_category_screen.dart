@@ -83,7 +83,7 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                 }
 
                 if (isEdit) {
-                  category!.name = controller.text;
+                  category.name = controller.text;
                   category.showOnHome = showOnHome;
                   await _budgetCategoryService.updateCategory(category);
                 } else {
