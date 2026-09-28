@@ -38,9 +38,7 @@ class BudgetCategoryService {
   Future<void> createDefaultCategories() async {
     final defaults = [
       {'name': '생활비', 'order': 0, 'includeInDaily': true},
-      {'name': '저축', 'order': 1, 'includeInDaily': true},
       {'name': '자유비', 'order': 2, 'includeInDaily': false},
-      {'name': '투자', 'order': 3, 'includeInDaily': false},
     ];
 
     for (var c in defaults) {

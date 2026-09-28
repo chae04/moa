@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/transaction_model.dart';
+import 'package:moa/services/budget_category_service.dart';
 import 'package:moa/services/transaction_service.dart';
 import 'package:moa/constants/categories.dart';
 import 'package:moa/constants/colors.dart';
@@ -24,6 +26,9 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   final BudgetService _budgetService = BudgetService(); // 수입 저장할 때 저축 자동 생성
   final TransactionService _transactionService = TransactionService();
 
+  List<BudgetCategoryModel> budgetCategories = [];
+  final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
+
   final _nameFocus = FocusNode();
   final _memoFocus = FocusNode();
 
@@ -36,12 +41,14 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   // 기본값 지정 및 선택된 값 저장 변수
   String selectedTransactionType = '지출';
   String selectedTransactionCategory = '식비';
-  String selectedBudgetCategory = '생활비';
   DateTime selectedDate = DateTime.now();
+
+  String selectedBudgetCategoryId = '';
 
   @override
   void initState() {
     super.initState();
+    _loadBudgetCategories();
     // 유형 선택 화면에서 넘어온 경우
     if (widget.type != null) {
       selectedTransactionType = widget.type!;
@@ -62,8 +69,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
       transactionPrice.text = widget.transaction!.amount.toString();
       selectedTransactionType = widget.transaction!.type;
       selectedTransactionCategory = widget.transaction!.category;
-      selectedBudgetCategory =
-          widget.transaction!.budgetCategoryId ?? '생활비'; // null일 때 기본값
+      selectedBudgetCategoryId = widget.transaction!.budgetCategoryId ?? ''; // 변경
       selectedDate = widget.transaction!.date;
       transactionMemo.text = widget.transaction!.memo ?? ''; // null일 때 기본값
     }
@@ -124,6 +130,16 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
       });
       primaryFocus?.unfocus();
     }
+  }
+
+  Future<void> _loadBudgetCategories() async {
+    final cats = await _budgetCategoryService.getCategories();
+    setState(() {
+      budgetCategories = cats;
+      if (cats.isNotEmpty) {
+        selectedBudgetCategoryId = cats.first.id;
+      }
+    });
   }
 
   @override
@@ -215,20 +231,23 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 if (selectedTransactionType == '저축') ...[
                   DropdownButtonFormField(
                     decoration: inputDecoration('예산 출처'),
-                    value: selectedBudgetCategory,
+                    value: selectedBudgetCategoryId.isEmpty
+                        ? null
+                        : selectedBudgetCategoryId,
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    items: budgetCategoryExcludeSaving.map<DropdownMenuItem<String>>((
-                      String value,
-                    ) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value, style: TextStyle(fontSize: 14)),
-                      );
-                    }).toList(),
+                    items: budgetCategories
+                        .where((c) => c.name != '저축')
+                        .map<DropdownMenuItem<String>>((c) {
+                          return DropdownMenuItem<String>(
+                            value: c.id,
+                            child: Text(c.name, style: TextStyle(fontSize: 14)),
+                          );
+                        })
+                        .toList(),
                     onChanged: (String? newValue) {
                       setState(() {
-                        selectedBudgetCategory = newValue!;
+                        selectedBudgetCategoryId = newValue!;
                       });
                     },
                   ),
@@ -239,20 +258,23 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 if (selectedTransactionType == '지출') ...[
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('예산 카테고리'),
-                    value: selectedBudgetCategory,
+                    value: selectedBudgetCategoryId.isEmpty
+                        ? null
+                        : selectedBudgetCategoryId,
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    items: budgetCategoryList.map<DropdownMenuItem<String>>((
-                      String value,
-                    ) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value, style: TextStyle(fontSize: 14)),
-                      );
-                    }).toList(),
+                    items: budgetCategories
+                        .where((c) => c.name != '저축') // 저축 제외
+                        .map<DropdownMenuItem<String>>((c) {
+                          return DropdownMenuItem<String>(
+                            value: c.id,
+                            child: Text(c.name),
+                          );
+                        })
+                        .toList(),
                     onChanged: (String? newValue) {
                       setState(() {
-                        selectedBudgetCategory = newValue!;
+                        selectedBudgetCategoryId = newValue!;
                       });
                     },
                   ),
@@ -309,10 +331,12 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                                     ? '저축'
                                     : selectedTransactionCategory,
                                 budgetCategoryId: selectedTransactionType == '수입'
-                                    ? null // 수입은 예산 카테고리 없음
-                                    : selectedBudgetCategory == '저축'
-                                    ? '저축' // 저축이면 자동으로 저축 예산으로
-                                    : selectedBudgetCategory, // 지출이면 사용자가 선택한 예산 카테고리
+                                    ? null
+                                    : selectedTransactionType == '저축'
+                                    ? budgetCategories
+                                          .firstWhere((c) => c.name == '저축')
+                                          .id
+                                    : selectedBudgetCategoryId,
                                 date: selectedDate,
                                 memo: transactionMemo.text,
                                 createdAt: DateTime.now(),
@@ -329,7 +353,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                                   if (userBudget != null) {
                                     final savingCategory = userBudget.categories
                                         .firstWhere(
-                                          (c) => c['category'] == '저축',
+                                          (c) => c['name'] == '저축',
                                           orElse: () => {'ratio': 0},
                                         );
                                     final savingRatio = savingCategory['ratio'] as int;
@@ -347,7 +371,9 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                                         amount: savingAmount,
                                         type: '저축',
                                         category: '저축',
-                                        budgetCategoryId: '저축',
+                                        budgetCategoryId: budgetCategories
+                                            .firstWhere((c) => c.name == '저축')
+                                            .id,
                                         date: selectedDate,
                                         memo: '수입의 ${savingRatio} 자동 저축',
                                         createdAt: DateTime.now(),

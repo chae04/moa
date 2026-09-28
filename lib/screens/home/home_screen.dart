@@ -107,7 +107,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // 예산 불러오기
     final budget = await _budgetService.getBudget(monthStr);
     final budgetData = budget ?? userBudget;
-
     if (budgetData != null) {
       setState(() {
         for (var c in budgetData.categories) {
@@ -163,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final budget = budgetByCategory[categoryId] ?? 0;
     final used = usedByBudgetCategory[categoryId] ?? 0;
     final balance = budget - used;
+    print('$categoryName - budget: $budget, used: $used');
 
     return Row(
       children: [
@@ -260,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 calendarFormat: CalendarFormat.month,
                 headerVisible: false,
                 locale: 'ko_KR',
-                rowHeight: 60,
+                rowHeight: 48,
                 daysOfWeekHeight: 25,
                 firstDay: DateTime.utc(2026, 1, 1),
                 lastDay: DateTime(DateTime.now().year + 2, 12, 31),
@@ -390,7 +390,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }).toList(),
             ),
-            SizedBox(height: 30),
 
             // 일일 예산 추천
             Divider(color: Colors.grey[200]),

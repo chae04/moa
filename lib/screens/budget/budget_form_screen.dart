@@ -22,6 +22,11 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
   Map<String, int> budgetRatios = {};
   Map<String, bool> includeInDaily = {};
   Map<String, TextEditingController> controllers = {};
+  final savingRatioController = TextEditingController();
+  final investRatioController = TextEditingController();
+  int savingRatio = 0;
+  int investRatio = 0;
+
   bool isLoading = true;
 
   String selectedMonth =
@@ -55,6 +60,10 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
 
       // 기존 비율 채우기
       if (userBudget != null) {
+        savingRatio = userBudget.savingRatio;
+        investRatio = userBudget.investRatio;
+        savingRatioController.text = userBudget.savingRatio.toString();
+        investRatioController.text = userBudget.investRatio.toString();
         for (var c in userBudget.categories) {
           final categoryId = c['categoryId'] as String?;
           if (categoryId != null) {
@@ -153,6 +162,48 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                           ),
                         );
                       }).toList(),
+                      Divider(color: Colors.grey[200]),
+                      SizedBox(height: 12),
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: savingRatioController,
+                                decoration: inputDecoration('저축 (%)'),
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) {
+                                  setState(() {
+                                    savingRatio = int.tryParse(value) ?? 0;
+                                  });
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 40), // 체크박스 자리 맞추기
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: investRatioController,
+                                decoration: inputDecoration('투자 (%)'),
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) {
+                                  setState(() {
+                                    investRatio = int.tryParse(value) ?? 0;
+                                  });
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 40),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
 
@@ -163,10 +214,10 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () async {
-                            final totalRatio = budgetRatios.values.fold(
-                              0,
-                              (sum, v) => sum + v,
-                            );
+                            final totalRatio =
+                                budgetRatios.values.fold(0, (sum, v) => sum + v) +
+                                savingRatio +
+                                investRatio;
 
                             if (totalRatio != 100) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -193,6 +244,8 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                               userId: FirebaseAuth.instance.currentUser!.uid,
                               month: selectedMonth,
                               categories: cats, // cats 사용
+                              savingRatio: savingRatio,
+                              investRatio: investRatio,
                             );
 
                             await _budgetService.setBudget(budget);
