@@ -4,6 +4,7 @@ import 'package:moa/services/auth_service.dart';
 import 'package:moa/screens/auth/login_screen.dart';
 import 'package:moa/screens/budget/budget_form_screen.dart';
 import 'package:moa/screens/budget/budget_category_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
@@ -14,24 +15,12 @@ class MypageScreen extends StatefulWidget {
 
 class _MypageScreenState extends State<MypageScreen> {
   final AuthService _authService = AuthService();
-  final nicknamecontroller = TextEditingController();
-  String nickname = '';
   bool isLoading = true;
   bool isDeleting = false;
 
   @override
   void initState() {
     super.initState();
-    _loadNickname();
-  }
-
-  Future<void> _loadNickname() async {
-    final name = await _authService.getNickname();
-    setState(() {
-      nickname = name;
-      nicknamecontroller.text = name;
-      isLoading = false;
-    });
   }
 
   Widget _buildMenuItem({
@@ -71,7 +60,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       ),
                       SizedBox(height: 32),
 
-                      // 닉네임 카드
+                      // 프로필
                       Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -85,25 +74,9 @@ class _MypageScreenState extends State<MypageScreen> {
                               child: Icon(Icons.person, color: primaryColor),
                             ),
                             SizedBox(width: 12),
-                            Expanded(
-                              child: TextField(
-                                controller: nicknamecontroller,
-                                decoration: InputDecoration(
-                                  labelText: '닉네임',
-                                  border: InputBorder.none,
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                await _authService.updateNickname(
-                                  nicknamecontroller.text,
-                                );
-                                ScaffoldMessenger.of(
-                                  context,
-                                ).showSnackBar(SnackBar(content: Text('닉네임이 변경되었습니다.')));
-                              },
-                              child: Text('변경', style: TextStyle(color: primaryColor)),
+                            Text(
+                              FirebaseAuth.instance.currentUser?.email ?? '',
+                              style: TextStyle(fontSize: 14),
                             ),
                           ],
                         ),

@@ -15,7 +15,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final passwordCheckController = TextEditingController();
-  final nicknameController = TextEditingController();
   bool isLoading = false;
 
   @override
@@ -63,7 +62,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
             // 닉네임 입력 필드
             TextField(
-              controller: nicknameController,
               decoration: InputDecoration(labelText: '닉네임'),
               keyboardType: TextInputType.name,
             ),
@@ -105,7 +103,6 @@ class _SignupScreenState extends State<SignupScreen> {
                                 builder: (context) => SignupBudgetScreen(
                                   email: emailController.text,
                                   password: passwordController.text,
-                                  nickname: nicknameController.text,
                                 ),
                               ),
                             );

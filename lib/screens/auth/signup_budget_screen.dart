@@ -7,14 +7,8 @@ import 'package:moa/screens/auth/login_screen.dart';
 class SignupBudgetScreen extends StatefulWidget {
   final String email;
   final String password;
-  final String nickname;
 
-  const SignupBudgetScreen({
-    super.key,
-    required this.email,
-    required this.password,
-    required this.nickname,
-  });
+  const SignupBudgetScreen({super.key, required this.email, required this.password});
 
   @override
   State<SignupBudgetScreen> createState() => _SignupBudgetScreenState();
@@ -179,7 +173,6 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
                               await _authService.signUp(
                                 email: widget.email,
                                 password: widget.password,
-                                nickname: widget.nickname,
                                 budgetCategories: categories,
                                 includeInDaily: includeInDaily,
                                 savingRatio: savingRatio,

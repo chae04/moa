@@ -14,7 +14,6 @@ class AuthService {
   Future<void> signUp({
     required String email,
     required String password,
-    required String nickname,
     required List<Map<String, dynamic>> budgetCategories,
     required Map<String, bool> includeInDaily,
     required int savingRatio,
@@ -29,12 +28,6 @@ class AuthService {
       );
 
       try {
-        // Firebase에 닉네임 저장
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'nickname': nickname,
-          'createdAt': DateTime.now(),
-        });
-
         // 기본 예산 카테고리 생성
         await _budgetCategoryService.createDefaultCategories(budgetCategories);
 
@@ -87,19 +80,6 @@ class AuthService {
     await _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
-  // 닉네임 불러오기
-  Future<String> getNickname() async {
-    final doc = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
-    return doc.data()!['nickname'];
-  }
-
-  // 닉네임 수정
-  Future<void> updateNickname(String nickname) async {
-    await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
-      'nickname': nickname,
-    });
-  }
-
   // 로그아웃
   Future<void> signOut() async {
     await _auth.signOut();
@@ -136,8 +116,6 @@ class AuthService {
     for (var doc in categories.docs) {
       await doc.reference.delete();
     }
-
-    await _firestore.collection('users').doc(uid).delete();
 
     await _auth.currentUser!.delete();
   }
