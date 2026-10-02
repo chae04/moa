@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/constants/styles.dart';
 
 class BudgetFormScreen extends StatefulWidget {
-  String? deleteCategoryId; // 삭제할 카테고리 ID
+  final String? deleteCategoryId; // 삭제할 카테고리 ID
   BudgetFormScreen({super.key, this.deleteCategoryId});
   @override
   State<BudgetFormScreen> createState() => _BudgetScreenState();
