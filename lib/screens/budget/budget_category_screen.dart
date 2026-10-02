@@ -168,12 +168,12 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
     );
 
     if (confirm == true) {
-      await _budgetCategoryService.deleteCategory(category.id);
-      await _loadCategories();
       if (mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => BudgetFormScreen()),
+          MaterialPageRoute(
+            builder: (context) => BudgetFormScreen(deleteCategoryId: category.id),
+          ),
         ).then((_) => _loadCategories());
       }
     }

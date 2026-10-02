@@ -8,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/constants/styles.dart';
 
 class BudgetFormScreen extends StatefulWidget {
+  String? deleteCategoryId; // 삭제할 카테고리 ID
+  BudgetFormScreen({super.key, this.deleteCategoryId});
   @override
   State<BudgetFormScreen> createState() => _BudgetScreenState();
 }
@@ -15,6 +17,7 @@ class BudgetFormScreen extends StatefulWidget {
 class _BudgetScreenState extends State<BudgetFormScreen> {
   final BudgetService _budgetService = BudgetService();
   final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
+  Map<String, bool> showOnHome = {};
 
   List<BudgetCategoryModel> categories = [];
   Map<String, int> budgetRatios = {};
@@ -54,6 +57,7 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
         budgetRatios[c.id] = 0;
         includeInDaily[c.id] = c.includeInDaily;
         controllers[c.id] = TextEditingController();
+        showOnHome[c.id] = c.showOnHome;
       }
 
       // 기존 비율 채우기
@@ -126,68 +130,124 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                             // 카테고리별 비율 입력
                             Column(
                               children: [
-                                Row(
-                                  children: [
-                                    Expanded(child: SizedBox()),
-                                    Text(
-                                      '일일 예산',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
                                 SizedBox(height: 8),
-                                ...categories.map((category) {
-                                  return Padding(
-                                    padding: EdgeInsets.only(bottom: 15),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: TextField(
-                                            controller: controllers[category.id],
-                                            decoration: inputDecoration(
-                                              '${category.name} (%)',
+                                ...categories
+                                    .where((c) => c.id != widget.deleteCategoryId)
+                                    .map((category) {
+                                      return Padding(
+                                        padding: EdgeInsets.only(bottom: 15),
+                                        child: Row(
+                                          children: [
+                                            // 카테고리 이름 (고정 너비)
+                                            SizedBox(
+                                              width: 60,
+                                              child: Text(
+                                                category.name,
+                                                style: TextStyle(fontSize: 13),
+                                              ),
                                             ),
-                                            keyboardType: TextInputType.number,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                budgetRatios[category.id] =
-                                                    int.tryParse(value) ?? 0;
-                                              });
-                                            },
-                                          ),
+                                            SizedBox(width: 8),
+                                            // 비율 입력 (짧게)
+                                            Expanded(
+                                              child: TextField(
+                                                controller: controllers[category.id],
+                                                decoration: inputDecoration('%'),
+                                                keyboardType: TextInputType.number,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    budgetRatios[category.id] =
+                                                        int.tryParse(value) ?? 0;
+                                                  });
+                                                },
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+
+                                            // 일일 예산 체크박스
+                                            GestureDetector(
+                                              onTap: () {
+                                                setState(
+                                                  () => includeInDaily[category.id] =
+                                                      !(includeInDaily[category.id] ??
+                                                          false),
+                                                );
+                                              },
+
+                                              child: Icon(
+                                                (includeInDaily[category.id] ?? false)
+                                                    ? Icons.calendar_month
+                                                    : Icons.calendar_month_outlined,
+                                                color:
+                                                    (includeInDaily[category.id] ?? false)
+                                                    ? primaryColor
+                                                    : Colors.grey[300],
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+                                            // 홈화면 표시
+                                            GestureDetector(
+                                              onTap: () {
+                                                final currentShowOnHome =
+                                                    showOnHome[category.id] ?? false;
+                                                if (!currentShowOnHome &&
+                                                    showOnHome.values
+                                                            .where((v) => v)
+                                                            .length >=
+                                                        5) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        '홈화면에는 최대 5개까지 표시할 수 있어요',
+                                                      ),
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+                                                setState(
+                                                  () => showOnHome[category.id] =
+                                                      !currentShowOnHome,
+                                                );
+                                              },
+                                              child: Icon(
+                                                (showOnHome[category.id] ?? false)
+                                                    ? Icons.home
+                                                    : Icons.home_outlined,
+                                                color: (showOnHome[category.id] ?? false)
+                                                    ? primaryColor
+                                                    : Colors.grey[300],
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        Checkbox(
-                                          value: includeInDaily[category.id] ?? false,
-                                          activeColor: primaryColor,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              includeInDaily[category.id] = value!;
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
+                                      );
+                                    })
+                                    .toList(),
                                 Divider(color: Colors.grey[200]),
                                 SizedBox(height: 12),
                                 Padding(
                                   padding: EdgeInsets.only(bottom: 12),
                                   child: Row(
                                     children: [
+                                      SizedBox(
+                                        width: 60,
+                                        child: Text('저축', style: TextStyle(fontSize: 13)),
+                                      ),
+                                      SizedBox(width: 8),
                                       Expanded(
                                         child: TextField(
                                           controller: savingRatioController,
-                                          decoration: inputDecoration('저축 (%)'),
+                                          decoration: inputDecoration('%'),
                                           keyboardType: TextInputType.number,
                                           onChanged: (value) {
-                                            setState(() {
-                                              savingRatio = int.tryParse(value) ?? 0;
-                                            });
+                                            setState(
+                                              () =>
+                                                  savingRatio = int.tryParse(value) ?? 0,
+                                            );
                                           },
                                         ),
                                       ),
-                                      SizedBox(width: 40), // 체크박스 자리 맞추기
                                     ],
                                   ),
                                 ),
@@ -195,19 +255,24 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                                   padding: EdgeInsets.only(bottom: 12),
                                   child: Row(
                                     children: [
+                                      SizedBox(
+                                        width: 60,
+                                        child: Text('투자', style: TextStyle(fontSize: 13)),
+                                      ),
+                                      SizedBox(width: 8),
                                       Expanded(
                                         child: TextField(
-                                          controller: investRatioController,
-                                          decoration: inputDecoration('투자 (%)'),
+                                          controller: savingRatioController,
+                                          decoration: inputDecoration('%'),
                                           keyboardType: TextInputType.number,
                                           onChanged: (value) {
-                                            setState(() {
-                                              investRatio = int.tryParse(value) ?? 0;
-                                            });
+                                            setState(
+                                              () =>
+                                                  savingRatio = int.tryParse(value) ?? 0,
+                                            );
                                           },
                                         ),
                                       ),
-                                      SizedBox(width: 40),
                                     ],
                                   ),
                                 ),
@@ -226,7 +291,11 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                         child: ElevatedButton(
                           onPressed: () async {
                             final totalRatio =
-                                budgetRatios.values.fold(0, (sum, v) => sum + v) +
+                                budgetRatios.entries
+                                    .where(
+                                      (e) => e.key != widget.deleteCategoryId,
+                                    ) // 삭제 예정 카테고리 제외
+                                    .fold(0, (sum, e) => sum + e.value) +
                                 savingRatio +
                                 investRatio;
 
@@ -259,8 +328,22 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                               investRatio: investRatio,
                             );
 
+                            // BudgetModel 저장
                             await _budgetService.setBudget(budget);
                             await _budgetService.setUserBudget(budget);
+
+                            if (widget.deleteCategoryId != null) {
+                              await _budgetCategoryService.deleteCategory(
+                                widget.deleteCategoryId!,
+                              );
+                            }
+
+                            // showOnHome, includeInDaily 업데이트
+                            for (var c in categories) {
+                              c.showOnHome = showOnHome[c.id] ?? false;
+                              c.includeInDaily = includeInDaily[c.id] ?? false;
+                              await _budgetCategoryService.updateCategory(c);
+                            }
 
                             if (mounted) {
                               Navigator.pop(context);
