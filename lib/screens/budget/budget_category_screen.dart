@@ -36,6 +36,7 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
     final controller = TextEditingController(text: category?.name ?? '');
     bool showOnHome = category?.showOnHome ?? false;
     final isEdit = category != null;
+    String? limitError;
 
     await showDialog(
       context: context,
@@ -52,16 +53,34 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                 autofocus: true,
               ),
               SizedBox(height: 16),
-              Row(
+              Column(
                 children: [
-                  Checkbox(
-                    value: showOnHome,
-                    activeColor: primaryColor,
-                    onChanged: (value) {
-                      setDialogState(() => showOnHome = value!);
-                    },
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: showOnHome,
+                        activeColor: primaryColor,
+                        onChanged: (value) {
+                          if (value == true &&
+                              !(category?.showOnHome ?? false) &&
+                              categories.where((c) => c.showOnHome).length >= 5) {
+                            setDialogState(() {
+                              limitError = '홈화면에는 최대 5개까지 표시할 수 있어요';
+                            });
+                            return;
+                          }
+                          setDialogState(() {
+                            showOnHome = value!;
+                            limitError = null;
+                          });
+                        },
+                      ),
+                      Text('홈화면에 표시', style: TextStyle(fontSize: 14)),
+                    ],
                   ),
-                  Text('홈화면에 표시', style: TextStyle(fontSize: 14)),
+                  // 체크박스 아래에 에러 메시지
+                  if (limitError != null)
+                    Text(limitError!, style: TextStyle(color: Colors.red, fontSize: 12)),
                 ],
               ),
             ],
@@ -191,49 +210,55 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
             isLoading
                 ? Center(child: CircularProgressIndicator())
                 : Expanded(
-                    child: ListView.separated(
-                      itemCount: categories.length,
-                      separatorBuilder: (context, index) =>
-                          Divider(color: Colors.grey[200]),
-                      itemBuilder: (context, index) {
-                        final category = categories[index];
-                        return ListTile(
-                          leading: GestureDetector(
-                            onTap: () async {
-                              if (!category.showOnHome &&
-                                  categories.where((c) => c.showOnHome).length >= 5) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('홈화면에는 최대 5개까지 표시할 수 있어요')),
-                                );
-                                return;
-                              }
-                              category.showOnHome = !category.showOnHome;
-                              await _budgetCategoryService.updateCategory(category);
-                              _loadCategories();
-                            },
-                            child: Icon(
-                              Icons.label,
-                              color: category.showOnHome
-                                  ? primaryColor
-                                  : Colors.grey[300],
+                    child: Scrollbar(
+                      thumbVisibility: false,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.only(top: 20, bottom: 20),
+
+                        itemCount: categories.length,
+                        separatorBuilder: (context, index) =>
+                            Divider(color: Colors.grey[200]),
+                        itemBuilder: (context, index) {
+                          final category = categories[index];
+                          return ListTile(
+                            leading: GestureDetector(
+                              onTap: () async {
+                                if (!category.showOnHome &&
+                                    categories.where((c) => c.showOnHome).length >= 5) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('홈화면에는 최대 5개까지 표시할 수 있어요')),
+                                  );
+                                  return;
+                                }
+                                category.showOnHome = !category.showOnHome;
+                                await _budgetCategoryService.updateCategory(category);
+                                _loadCategories();
+                              },
+                              child: Icon(
+                                Icons.label,
+                                color: category.showOnHome
+                                    ? primaryColor
+                                    : Colors.grey[300],
+                              ),
                             ),
-                          ),
-                          title: Text(category.name),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () => _showCategoryDialog(category: category),
-                                icon: Icon(Icons.edit_outlined, color: Colors.grey),
-                              ),
-                              IconButton(
-                                onPressed: () => _deleteCategory(category),
-                                icon: Icon(Icons.delete_outline, color: primaryColor),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                            title: Text(category.name),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  onPressed: () =>
+                                      _showCategoryDialog(category: category),
+                                  icon: Icon(Icons.edit_outlined, color: Colors.grey),
+                                ),
+                                IconButton(
+                                  onPressed: () => _deleteCategory(category),
+                                  icon: Icon(Icons.delete_outline, color: primaryColor),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
             SizedBox(

@@ -116,95 +116,108 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                     ),
                   ),
 
-                  // 카테고리별 비율 입력
-                  Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: SizedBox()),
-                          Text(
-                            '일일 예산',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      ...categories.map((category) {
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 15),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: controllers[category.id],
-                                  decoration: inputDecoration('${category.name} (%)'),
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      budgetRatios[category.id] =
-                                          int.tryParse(value) ?? 0;
-                                    });
-                                  },
+                  Expanded(
+                    child: Scrollbar(
+                      thumbVisibility: false,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.only(top: 20, bottom: 20, right: 10),
+                        child: Column(
+                          children: [
+                            // 카테고리별 비율 입력
+                            Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(child: SizedBox()),
+                                    Text(
+                                      '일일 예산',
+                                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              Checkbox(
-                                value: includeInDaily[category.id] ?? false,
-                                activeColor: primaryColor,
-                                onChanged: (value) {
-                                  setState(() {
-                                    includeInDaily[category.id] = value!;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      Divider(color: Colors.grey[200]),
-                      SizedBox(height: 12),
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: savingRatioController,
-                                decoration: inputDecoration('저축 (%)'),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) {
-                                  setState(() {
-                                    savingRatio = int.tryParse(value) ?? 0;
-                                  });
-                                },
-                              ),
+                                SizedBox(height: 8),
+                                ...categories.map((category) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(bottom: 15),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            controller: controllers[category.id],
+                                            decoration: inputDecoration(
+                                              '${category.name} (%)',
+                                            ),
+                                            keyboardType: TextInputType.number,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                budgetRatios[category.id] =
+                                                    int.tryParse(value) ?? 0;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                        Checkbox(
+                                          value: includeInDaily[category.id] ?? false,
+                                          activeColor: primaryColor,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              includeInDaily[category.id] = value!;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                Divider(color: Colors.grey[200]),
+                                SizedBox(height: 12),
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextField(
+                                          controller: savingRatioController,
+                                          decoration: inputDecoration('저축 (%)'),
+                                          keyboardType: TextInputType.number,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              savingRatio = int.tryParse(value) ?? 0;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(width: 40), // 체크박스 자리 맞추기
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextField(
+                                          controller: investRatioController,
+                                          decoration: inputDecoration('투자 (%)'),
+                                          keyboardType: TextInputType.number,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              investRatio = int.tryParse(value) ?? 0;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(width: 40),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(width: 40), // 체크박스 자리 맞추기
                           ],
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: investRatioController,
-                                decoration: inputDecoration('투자 (%)'),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) {
-                                  setState(() {
-                                    investRatio = int.tryParse(value) ?? 0;
-                                  });
-                                },
-                              ),
-                            ),
-                            SizedBox(width: 40),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-
                   // 버튼
                   Column(
                     children: [
