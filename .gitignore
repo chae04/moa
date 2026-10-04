@@ -52,3 +52,13 @@ server/out/
 server/*.jar
 server/*.war
 server/HELP.md
+
+# Flutter Android
+flutter/android/app/src/debug/
+flutter/android/app/src/profile/
+flutter/android/build/
+flutter/android/local.properties
+flutter/android/.gradle/
+flutter/android/app/*.iml
+flutter/.dart_tool/
+flutter/build/
