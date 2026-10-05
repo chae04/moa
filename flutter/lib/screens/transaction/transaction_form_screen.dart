@@ -375,7 +375,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                                             .firstWhere((c) => c.name == '저축')
                                             .id,
                                         date: selectedDate,
-                                        memo: '수입의 ${savingRatio} 자동 저축',
+                                        memo: '수입의 $savingRatio 자동 저축',
                                         createdAt: DateTime.now(),
                                       );
                                       await _transactionService.addTransaction(

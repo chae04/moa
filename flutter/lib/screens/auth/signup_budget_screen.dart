@@ -95,7 +95,7 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
                 Divider(color: Colors.grey[200]),
                 SizedBox(height: 12),
                 Padding(

@@ -107,7 +107,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             );
                           }
-                          ;
                         },
                   child: isLoading
                       ? SizedBox(

@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final m = month ?? _focusedDay.month;
     final cats = await _budgetCategoryService.getCategories();
 
-    final monthStr = '${y}-${m.toString().padLeft(2, '0')}';
+    final monthStr = '$y-${m.toString().padLeft(2, '0')}';
 
     final transactions = await _transactionService.getMonthlyTransactions(y, m);
     final userBudget = await _budgetService.getUserBudget();

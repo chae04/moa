@@ -211,8 +211,9 @@ class _MypageScreenState extends State<MypageScreen> {
                                               onPressed: isVerifying
                                                   ? null
                                                   : () async {
-                                                      if (passwordController.text.isEmpty)
+                                                      if (passwordController.text.isEmpty) {
                                                         return;
+                                                      }
                                                       setDialogState(() {
                                                         isVerifying = true;
                                                         errorText = null;

@@ -223,7 +223,7 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                                         ),
                                       );
                                     })
-                                    .toList(),
+                                    ,
                                 Divider(color: Colors.grey[200]),
                                 SizedBox(height: 12),
                                 Padding(
