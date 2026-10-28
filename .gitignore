@@ -62,3 +62,6 @@ flutter/android/.gradle/
 flutter/android/app/*.iml
 flutter/.dart_tool/
 flutter/build/
+
+# secret
+server/src/main/resources/application.properties
