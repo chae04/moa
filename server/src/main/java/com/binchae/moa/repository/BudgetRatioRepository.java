@@ -3,6 +3,8 @@ package com.binchae.moa.repository;
 import com.binchae.moa.entity.BudgetRatio;
 import com.binchae.moa.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,4 +16,8 @@ public interface BudgetRatioRepository extends JpaRepository<BudgetRatio, Long> 
             ORDER BY br.applyFrom DESC
             """)
     List<BudgetRatio> findApplicableRatios(@Param("user") User user, @Param("month") String month);
+
+    @Modifying 
+    @Query("delete from BudgetRatio u where u.user = :user")
+    void deleteByUser(@Param("user") User user);
 }

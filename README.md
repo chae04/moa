@@ -101,7 +101,7 @@ flutter run
 ```bash
 curl -X POST http://localhost:8080/api/auth/signup \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
+  -d '{"email":"test@test.com","password":"123456"}'
 ```
 
 ## DB 설계

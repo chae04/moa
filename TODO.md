@@ -22,7 +22,7 @@
 - [x] Repository 4개 (JPQL)
 - [x] `ddl-auto`를 `update`로 변경 (데이터 유지)
 - [x] 비밀키 분리 (`application-local.properties` + `.gitignore`)
-- [ ] 서버 코드 git push (비밀키가 안 올라가는지 확인 후)
+- [x] 서버 코드 git push (비밀키가 안 올라가는지 확인 후)
 
 ### 1-2. Auth + JWT + Spring Security
 - [x] SecurityConfig (BCrypt, STATELESS, CSRF 해제)
