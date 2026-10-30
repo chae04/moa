@@ -64,4 +64,4 @@ flutter/.dart_tool/
 flutter/build/
 
 # secret
-server/src/main/resources/application.properties
+server/src/main/resources/application-local.properties
