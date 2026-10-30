@@ -32,7 +32,7 @@
 - [x] 예외 처리 (ApiException, GlobalExceptionHandler: 401/409/400)
 - [x] JwtAuthFilter (요청마다 토큰 검증)
 - [x] `/me` 로 토큰 동작 확인
-- [ ] 회원 탈퇴 API (비밀번호 확인 후 연관 데이터 삭제)
+- [x] 회원 탈퇴 API (비밀번호 확인 후 연관 데이터 삭제)
 - [ ] `/me` 임시 코드 정리
 
 ### 1-3. 예산 카테고리 API
