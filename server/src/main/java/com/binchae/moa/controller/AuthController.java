@@ -9,9 +9,7 @@ import com.binchae.moa.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -34,10 +32,4 @@ public class AuthController {
         String token = jwtProvider.createToken(user.getId());
         return new TokenResponse(token);
     }
-
-    @GetMapping("/me")
-    public Long me(@AuthenticationPrincipal Long userId) {
-        return userId;
-    }
-    
 }

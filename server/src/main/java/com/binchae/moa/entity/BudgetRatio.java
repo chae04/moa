@@ -40,7 +40,7 @@ public class BudgetRatio {
     private LocalDateTime createdAt;
 
     @PrePersist 
-    public void perPersist() {
+    public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
 }

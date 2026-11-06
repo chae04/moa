@@ -32,14 +32,14 @@ public class BudgetCategory {
     @Column (name = "show_on_home", nullable = false)
     private Boolean showOnHome = true;
 
-    @Column (name = "is_delete", nullable = false)
+    @Column (name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
     @Column (name = "created_at")
-    private LocalDateTime craetedAt;
+    private LocalDateTime createdAt;
 
     @PrePersist 
     public void prePersist() {
-        this.craetedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 }

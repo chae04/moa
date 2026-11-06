@@ -28,8 +28,8 @@ moa/
 
 ```
 config/      SecurityConfig, JwtProvider, JwtAuthFilter
-controller/  AuthController
-service/     AuthService
+controller/  AuthController, UserController
+service/     AuthService, UserService
 repository/  User / BudgetCategory / BudgetRatio / Transaction
 entity/      User, BudgetCategory, BudgetRatio, Transaction
 dto/         요청·응답 객체
@@ -65,7 +65,7 @@ DB 비밀번호를 설정했다면 `spring.datasource.password=...` 도 여기�
 cd server
 ./gradlew bootRun
 ```
-확인: `curl http://localhost:8080/api/auth/ping`
+확인: 아래 [API](#api-현재-구현)의 회원가입 curl 예시로 응답이 오는지 확인합니다.
 
 ## 앱 실행 방법
 
@@ -89,10 +89,9 @@ flutter run
 
 | 메서드 | 경로 | 설명 | 인증 |
 |---|---|---|---|
-| GET | `/api/auth/ping` | 서버 확인 | 불필요 |
 | POST | `/api/auth/signup` | 회원가입 | 불필요 |
 | POST | `/api/auth/login` | 로그인, JWT 발급 | 불필요 |
-| GET | `/api/auth/me` | 토큰 확인용 | 필요 |
+| DELETE | `/api/users/me` | 회원 탈퇴 (본문 `{"password": "..."}`) | 필요 |
 
 인증이 필요한 요청은 헤더에 `Authorization: Bearer <토큰>` 을 붙입니다.
 에러 응답은 `{"message": "..."}` 형태로 통일합니다 (400 / 401 / 409).
