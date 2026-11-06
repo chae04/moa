@@ -36,15 +36,15 @@
 - [x] `/me` 임시 코드 정리
 
 ### 1-3. 예산 카테고리 API
-- [ ] CategoryRequest / CategoryResponse DTO
-- [ ] BudgetCategoryService
-- [ ] `GET /api/categories` 목록 (삭제 제외, order 순)
-- [ ] `POST /api/categories` 추가
-- [ ] `PUT /api/categories/{id}` 수정 (이름, 홈 표시, 일일 포함)
-- [ ] `DELETE /api/categories/{id}` 소프트 삭제
-- [ ] 홈 표시 최대 5개 검증
-- [ ] 최소 1개 유지 검증
-- [ ] 본인 소유 카테고리만 접근 가능한지 검증
+- [x] CategoryRequest / CategoryResponse DTO
+- [x] BudgetCategoryService
+- [x] `GET /api/categories` 목록 (삭제 제외, order 순)
+- [x] `POST /api/categories` 추가
+- [x] `PUT /api/categories/{id}` 수정 (이름, 홈 표시, 일일 포함)
+- [x] `DELETE /api/categories/{id}` 소프트 삭제
+- [x] 홈 표시 최대 5개 검증
+- [x] 최소 1개 유지 검증
+- [x] 본인 소유 카테고리만 접근 가능한지 검증
 
 ### 1-4. 예산 비율 API
 - [ ] BudgetRatioService
