@@ -262,13 +262,13 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                                       SizedBox(width: 8),
                                       Expanded(
                                         child: TextField(
-                                          controller: savingRatioController,
+                                          controller: investRatioController,
                                           decoration: inputDecoration('%'),
                                           keyboardType: TextInputType.number,
                                           onChanged: (value) {
                                             setState(
                                               () =>
-                                                  savingRatio = int.tryParse(value) ?? 0,
+                                                  investRatio = int.tryParse(value) ?? 0,
                                             );
                                           },
                                         ),

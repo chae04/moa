@@ -22,6 +22,7 @@ public class BudgetCategoryService {
 
     private final BudgetCategoryRepository budgetCategoryRepository;
     private final UserRepository userRepository;
+    private final BudgetRatioService budgetRatioService;
 
     // 목록 조회
     @Transactional(readOnly = true)
@@ -80,6 +81,11 @@ public class BudgetCategoryService {
         // 최소 1개 유지 검증
         if (budgetCategoryRepository.countActive(user) <= 1) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "카테고리는 최소 1개 존재해야 합니다.");
+        }
+
+        // [직접 작성 3] 비율이 남아 있으면 삭제 차단
+        if(budgetRatioService.isCategoryInUse(category, user)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "해당 카테고리에 남아있는 비율을 먼저 조정해야합니다.");
         }
 
         category.setIsDeleted(true);

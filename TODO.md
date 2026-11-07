@@ -47,11 +47,11 @@
 - [x] 본인 소유 카테고리만 접근 가능한지 검증
 
 ### 1-4. 예산 비율 API
-- [ ] BudgetRatioService
-- [ ] `GET /api/budget-ratios?month=2026-10` (해당 월 적용 비율)
-- [ ] `PUT /api/budget-ratios` (적용 시작 월과 함께 저장)
-- [ ] 합계 100% 검증 (카테고리 + 저축 + 투자)
-- [ ] 삭제 예정 카테고리 제외 로직
+- [x] BudgetRatioService
+- [x] `GET /api/budget-ratios?month=2026-10` (해당 월 적용 비율)
+- [x] `PUT /api/budget-ratios` (적용 시작 월과 함께 저장)
+- [x] 합계 100% 검증 (카테고리 + 저축 + 투자)
+- [x] 삭제 예정 카테고리 제외 로직
 
 ### 1-5. 거래 API
 - [ ] TransactionRequest / TransactionResponse DTO
@@ -73,6 +73,7 @@
 
 ## 2. Flutter: Firebase → HTTP 호출 교체
 
+- [ ] 삭제 예정 카테고리: 312번 줄에서 합계 계산에서 뺀 카테고리를 저장 목록에는 그대로 넣습니다. 그래서 저장된 합계가 100을 넘을 수 있습니다. 수정하기.
 - [ ] `dio` 패키지 추가, API 공통 클라이언트 (baseUrl, 토큰 헤더)
 - [ ] 토큰 저장 (`flutter_secure_storage`)
 - [ ] AuthService 교체 (가입 / 로그인 / 로그아웃 / 탈퇴)

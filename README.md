@@ -28,8 +28,8 @@ moa/
 
 ```
 config/      SecurityConfig, JwtProvider, JwtAuthFilter
-controller/  AuthController, UserController
-service/     AuthService, UserService
+controller/  AuthController, UserController, CategoryController, BudgetRatioController
+service/     AuthService, UserService, BudgetCategoryService, BudgetRatioService
 repository/  User / BudgetCategory / BudgetRatio / Transaction
 entity/      User, BudgetCategory, BudgetRatio, Transaction
 dto/         요청·응답 객체
@@ -96,9 +96,11 @@ flutter run
 | POST | `/api/categories` | 카테고리 추가 | 필요 |
 | PUT | `/api/categories/{id}` | 카테고리 수정 (이름, 홈 표시, 일일 포함) | 필요 |
 | DELETE | `/api/categories/{id}` | 카테고리 소프트 삭제 | 필요 |
+| GET | `/api/budget-ratios?month=YYYY-MM` | 해당 월에 적용되는 예산 비율 조회 | 필요 |
+| PUT | `/api/budget-ratios` | 예산 비율 저장 (적용 시작 월 지정, 합계 100) | 필요 |
 
 인증이 필요한 요청은 헤더에 `Authorization: Bearer <토큰>` 을 붙입니다.
-에러 응답은 `{"message": "..."}` 형태로 통일합니다 (400 / 401 / 409).
+에러 응답은 `{"message": "..."}` 형태로 통일합니다 (400 / 401 / 404 / 409).
 
 예시:
 ```bash
