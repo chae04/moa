@@ -92,6 +92,10 @@ flutter run
 | POST | `/api/auth/signup` | 회원가입 | 불필요 |
 | POST | `/api/auth/login` | 로그인, JWT 발급 | 불필요 |
 | DELETE | `/api/users/me` | 회원 탈퇴 (본문 `{"password": "..."}`) | 필요 |
+| GET | `/api/categories` | 카테고리 목록 (삭제 제외, 순서대로) | 필요 |
+| POST | `/api/categories` | 카테고리 추가 | 필요 |
+| PUT | `/api/categories/{id}` | 카테고리 수정 (이름, 홈 표시, 일일 포함) | 필요 |
+| DELETE | `/api/categories/{id}` | 카테고리 소프트 삭제 | 필요 |
 
 인증이 필요한 요청은 헤더에 `Authorization: Bearer <토큰>` 을 붙입니다.
 에러 응답은 `{"message": "..."}` 형태로 통일합니다 (400 / 401 / 409).
