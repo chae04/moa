@@ -28,7 +28,7 @@ public class Transaction {
     private Integer amount;
 
     @Column (nullable = false)
-    private String type; // 수입, 지출, 저축
+    private String type; // 수입, 지출, 저축, 투자
 
     @Column (nullable = false)
     private String category;
@@ -41,6 +41,9 @@ public class Transaction {
     private LocalDate date;
 
     private String memo; // null 허용
+
+    @Column (name = "source_transaction_id")
+    private Long sourceTransactionId; // 자동 거래를 만든 수입의 id. 그 외에는 null
 
     @Column (name = "created_at")
     private LocalDateTime createdAt;

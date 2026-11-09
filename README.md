@@ -28,8 +28,10 @@ moa/
 
 ```
 config/      SecurityConfig, JwtProvider, JwtAuthFilter
-controller/  AuthController, UserController, CategoryController, BudgetRatioController
-service/     AuthService, UserService, BudgetCategoryService, BudgetRatioService
+controller/  AuthController, UserController, CategoryController, BudgetRatioController,
+             TransactionController
+service/     AuthService, UserService, BudgetCategoryService, BudgetRatioService,
+             TransactionService
 repository/  User / BudgetCategory / BudgetRatio / Transaction
 entity/      User, BudgetCategory, BudgetRatio, Transaction
 dto/         요청·응답 객체
@@ -98,6 +100,10 @@ flutter run
 | DELETE | `/api/categories/{id}` | 카테고리 소프트 삭제 | 필요 |
 | GET | `/api/budget-ratios?month=YYYY-MM` | 해당 월에 적용되는 예산 비율 조회 | 필요 |
 | PUT | `/api/budget-ratios` | 예산 비율 저장 (적용 시작 월 지정, 합계 100) | 필요 |
+| GET | `/api/transactions?year=YYYY&month=M` | 해당 월 거래 목록 (최신 날짜순) | 필요 |
+| POST | `/api/transactions` | 거래 추가 (수입이면 저축·투자 자동 생성) | 필요 |
+| PUT | `/api/transactions/{id}` | 거래 수정 (유형·수입 금액 변경 불가, 자동 거래 수정 불가) | 필요 |
+| DELETE | `/api/transactions/{id}` | 거래 삭제 (수입이면 자동 거래도 삭제) | 필요 |
 
 인증이 필요한 요청은 헤더에 `Authorization: Bearer <토큰>` 을 붙입니다.
 에러 응답은 `{"message": "..."}` 형태로 통일합니다 (400 / 401 / 404 / 409).
@@ -118,7 +124,8 @@ budget_categories   (id, user_id, name, order_index, include_in_daily,
 budget_ratios       (id, user_id, budget_category_id, ratio, apply_from,
                      saving_ratio, invest_ratio, created_at)
 transactions        (id, user_id, title, amount, type, category,
-                     budget_category_id, date, memo, created_at, updated_at)
+                     budget_category_id, date, memo, source_transaction_id,
+                     created_at, updated_at)
 ```
 
 ```

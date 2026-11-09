@@ -35,7 +35,7 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // [직접 작성 1] 수정: PUT /api/categories/{id}
+    // 수정: PUT /api/categories/{id}
     @PutMapping("/{id}")
     public CategoryResponse updateCategory(@PathVariable Long id, 
             @AuthenticationPrincipal Long userId,
@@ -44,7 +44,7 @@ public class CategoryController {
     }
     
 
-    // [직접 작성 2] 삭제: DELETE /api/categories/{id}
+    // 삭제: DELETE /api/categories/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id,
             @AuthenticationPrincipal Long userId) {

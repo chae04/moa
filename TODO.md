@@ -54,15 +54,15 @@
 - [x] 삭제 예정 카테고리 제외 로직
 
 ### 1-5. 거래 API
-- [ ] TransactionRequest / TransactionResponse DTO
-- [ ] TransactionService
-- [ ] `GET /api/transactions?year=&month=` 월별 조회
-- [ ] `POST /api/transactions` 추가
-- [ ] `PUT /api/transactions/{id}` 수정 (수입은 금액 수정 불가)
-- [ ] `DELETE /api/transactions/{id}` 삭제
-- [ ] 수입 입력 시 저축/투자 자동 거래 생성
-- [ ] 저축 입력 시 출처 예산 카테고리 차감 처리
-- [ ] 본인 소유 거래만 접근 가능한지 검증
+- [x] TransactionRequest / TransactionResponse DTO
+- [x] TransactionService
+- [x] `GET /api/transactions?year=&month=` 월별 조회
+- [x] `POST /api/transactions` 추가
+- [x] `PUT /api/transactions/{id}` 수정 (수입은 금액 수정 불가)
+- [x] `DELETE /api/transactions/{id}` 삭제
+- [x] 수입 입력 시 저축/투자 자동 거래 생성
+- [x] 저축 입력 시 출처 예산 카테고리 차감 처리
+- [x] 본인 소유 거래만 접근 가능한지 검증
 
 ### 1-6. 홈 / 통계 API
 - [ ] 홈 요약 API (수입/지출/저축 합계, 카테고리별 사용액/잔액)
@@ -81,6 +81,10 @@
 - [ ] BudgetCategoryService 교체
 - [ ] BudgetService 교체 (비율)
 - [ ] TransactionService 교체
+    - 자동 투자: HANDOFF에는 저축·투자가 자동 생성된다고 되어 있지만, Flutter는 저축만 만듭니다. 서버는 HANDOFF 기준으로 둘 다 만듭니다.
+    - 자동 저축 비율: Flutter는 savingRatio 필드가 아니라 이름이 저축인 카테고리에서 비율을 찾습니다. 서버는 saving_ratio, invest_ratio를 씁니다.
+    - 예산 출처: 336번 줄에서 화면에서 고른 출처 대신 항상 저축 카테고리를 저장합니다. 그 이름의 카테고리가 없으면 예외도 납니다.
+    - Flutter 쪽은 HTTP 전환 때 투자도 처리해야 합니다. 놓치면 에러 없이 투자 거래가 합계와 목록 표시에서 조용히 빠집니다.
 - [ ] 홈화면 데이터 로딩 교체
 - [ ] 회원가입 흐름 교체 (비율 설정 포함)
 - [ ] 토큰 만료 시 로그인 화면으로 이동
