@@ -135,9 +135,8 @@ public class HomeService {
         }
 
         // [직접 작성 2] 남은 일수 remainingDays
-        int remainingDays = yearMonth.equals(thisMonth) ?
-            yearMonth.lengthOfMonth() - today.getDayOfMonth() + 1
-            : yearMonth.lengthOfMonth();
+        int remainingDays = yearMonth.equals(thisMonth) ? yearMonth.lengthOfMonth() - today.getDayOfMonth() + 1
+                : yearMonth.lengthOfMonth();
 
         // [직접 작성 3] 잔액 합 remaining
         int remaining = 0;

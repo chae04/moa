@@ -14,11 +14,10 @@ public class HomeController {
 
     @GetMapping
     public HomeResponse getHome(
-        @AuthenticationPrincipal Long userId,
-        @RequestParam int year,
-        @RequestParam int month
-    ) {
+            @AuthenticationPrincipal Long userId,
+            @RequestParam int year,
+            @RequestParam int month) {
         return homeService.getHome(userId, year, month);
     }
-    
+
 }

@@ -35,7 +35,6 @@ public class TransactionResponse {
                 budgetCategory != null ? budgetCategory.getName() : null,
                 transaction.getDate(),
                 transaction.getMemo(),
-                transaction.getSourceTransactionId()
-        );
+                transaction.getSourceTransactionId());
     }
 }

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/transactions")
 @RequiredArgsConstructor
@@ -50,7 +49,7 @@ public class TransactionController {
     // 삭제: DELETE /api/transactions/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTransaction(
-            @PathVariable  Long id,
+            @PathVariable Long id,
             @AuthenticationPrincipal Long userId) {
         transactionService.deleteTransaction(userId, id);
         return ResponseEntity.noContent().build();

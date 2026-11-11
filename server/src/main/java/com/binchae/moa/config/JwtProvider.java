@@ -18,7 +18,7 @@ public class JwtProvider {
     private final long expirationMs;
 
     public JwtProvider(
-            @Value("${jwt.secret}") String secret,  // properties에 적은 값을 주입받음
+            @Value("${jwt.secret}") String secret, // properties에 적은 값을 주입받음
             @Value("${jwt.expiration-ms}") long expirationMs) {
         // 문자열 비밀키를 서명용 키 객체로 바꿈
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -33,7 +33,7 @@ public class JwtProvider {
                 .subject(String.valueOf(userId))
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + expirationMs))
-                .signWith(key)  // 비밀키로 서명해서 위조를 막음.
+                .signWith(key) // 비밀키로 서명해서 위조를 막음.
                 .compact();
     }
 

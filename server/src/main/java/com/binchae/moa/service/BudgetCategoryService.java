@@ -84,7 +84,7 @@ public class BudgetCategoryService {
         }
 
         // [직접 작성 3] 비율이 남아 있으면 삭제 차단
-        if(budgetRatioService.isCategoryInUse(category, user)) {
+        if (budgetRatioService.isCategoryInUse(category, user)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "해당 카테고리에 남아있는 비율을 먼저 조정해야합니다.");
         }
 

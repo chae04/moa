@@ -20,7 +20,6 @@ public class CategoryResponse {
                 category.getName(),
                 category.getOrderIndex(),
                 category.getIncludeInDaily(),
-                category.getShowOnHome()
-        );
+                category.getShowOnHome());
     }
 }

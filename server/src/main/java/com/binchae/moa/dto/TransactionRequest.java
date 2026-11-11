@@ -21,7 +21,7 @@ public class TransactionRequest {
     private String title;
 
     @NotNull(message = "금액을 입력해주세요.")
-    @Positive(message = "금액은 0보다 커야 합니다.")    // Positive : 0과 음수를 막음
+    @Positive(message = "금액은 0보다 커야 합니다.") // Positive : 0과 음수를 막음
     private Integer amount;
 
     @NotBlank(message = "거래 유형을 입력해주세요.")

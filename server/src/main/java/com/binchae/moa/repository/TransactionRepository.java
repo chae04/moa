@@ -13,7 +13,6 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     @Query("""
             SELECT t FROM Transaction t
@@ -22,11 +21,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             ORDER BY t.date DESC, t.id DESC
             """)
     List<Transaction> findByUserAndDateRange(
-        @Param("user") User user, 
-        @Param("start") LocalDate start, 
-        @Param("end") LocalDate end
-    );
-    
+            @Param("user") User user,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
+
     @Modifying
     @Query("delete from Transaction t where t.user = :user") // user의 거래 전체 삭제
     void deleteByUser(@Param("user") User user);
@@ -53,10 +51,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             ORDER BY SUM(t.amount) DESC
             """)
     List<CategoryStatsResponse.CategoryAmount> sumExpenseByCategory(
-        @Param("user") User user,
-        @Param("start") LocalDate start,
-        @Param("end") LocalDate end
-    );
+            @Param("user") User user,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
 
     // [직접 작성] 기간 안 수입·지출을 월별, 유형별로 합산
     @Query("""
@@ -66,8 +63,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             GROUP BY MONTH(t.date), t.type
             """)
     List<MonthlyTypeSum> sumByMonthAndType(
-        @Param("user") User user,
-        @Param("start") LocalDate start,
-        @Param("end") LocalDate end
-    );
+            @Param("user") User user,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
 }

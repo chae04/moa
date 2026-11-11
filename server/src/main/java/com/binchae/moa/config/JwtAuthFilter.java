@@ -22,8 +22,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
 
@@ -32,8 +32,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             if (jwtProvider.isValid(token)) {
                 Long userId = jwtProvider.getUserId(token);
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(userId, null, List.of());
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(userId, null,
+                        List.of());
                 // userId가 인증되었음을 Spring Security에 기록 -> authenticated() 검사 통과
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }

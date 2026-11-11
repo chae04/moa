@@ -27,19 +27,17 @@ public class StatsController {
     // 카테고리별 지출
     @GetMapping("/categories")
     public CategoryStatsResponse getCategoryStats(
-        @AuthenticationPrincipal Long userId,
-        @RequestParam int year,
-        @RequestParam int month
-    ) {
+            @AuthenticationPrincipal Long userId,
+            @RequestParam int year,
+            @RequestParam int month) {
         return statsService.getCategoryStats(userId, year, month);
     }
 
     // 1년 추이
     @GetMapping("/yearly")
     public YearlyStatsResponse getYearlyStats(
-        @AuthenticationPrincipal Long userId,
-        @RequestParam int year
-    ) {
+            @AuthenticationPrincipal Long userId,
+            @RequestParam int year) {
         return statsService.getYearlyStats(userId, year);
     }
 }

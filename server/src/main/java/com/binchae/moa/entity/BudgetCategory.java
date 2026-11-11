@@ -12,33 +12,33 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class BudgetCategory {
-    @Id 
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @ManyToOne (fetch = FetchType.LAZY) // LAZY : 필요할 때만 호출
-    @JoinColumn (name = "user_id", nullable = false)
+
+    @ManyToOne(fetch = FetchType.LAZY) // LAZY : 필요할 때만 호출
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column (nullable = false)
+    @Column(nullable = false)
     private String name;
 
-    @Column (name = "order_index", nullable = false)
+    @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
 
-    @Column (name = "include_in_daily", nullable = false)
+    @Column(name = "include_in_daily", nullable = false)
     private Boolean includeInDaily = false;
 
-    @Column (name = "show_on_home", nullable = false)
+    @Column(name = "show_on_home", nullable = false)
     private Boolean showOnHome = true;
 
-    @Column (name = "is_deleted", nullable = false)
+    @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
-    @Column (name = "created_at")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @PrePersist 
+    @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }

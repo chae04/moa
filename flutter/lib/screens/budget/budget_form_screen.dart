@@ -222,8 +222,7 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                                           ],
                                         ),
                                       );
-                                    })
-                                    ,
+                                    }),
                                 Divider(color: Colors.grey[200]),
                                 SizedBox(height: 12),
                                 Padding(
@@ -309,15 +308,20 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                             }
 
                             // categories 배열로 변환
-                            final List<Map<String, dynamic>> cats = categories.map((c) {
-                              return <String, dynamic>{
-                                'categoryId': c.id,
-                                'name': c.name,
-                                'ratio': budgetRatios[c.id] ?? 0,
-                                'amount': 0,
-                                'includeInDaily': includeInDaily[c.id] ?? false,
-                              };
-                            }).toList();
+                            final List<Map<String, dynamic>> cats = categories
+                                .where(
+                                  (c) => c.id != widget.deleteCategoryId,
+                                ) // 삭제 예정 카테고리 제외
+                                .map((c) {
+                                  return <String, dynamic>{
+                                    'categoryId': c.id,
+                                    'name': c.name,
+                                    'ratio': budgetRatios[c.id] ?? 0,
+                                    'amount': 0,
+                                    'includeInDaily': includeInDaily[c.id] ?? false,
+                                  };
+                                })
+                                .toList();
 
                             // BudgetModel 생성
                             final budget = BudgetModel(

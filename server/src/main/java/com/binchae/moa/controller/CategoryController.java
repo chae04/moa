@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
@@ -37,12 +36,11 @@ public class CategoryController {
 
     // 수정: PUT /api/categories/{id}
     @PutMapping("/{id}")
-    public CategoryResponse updateCategory(@PathVariable Long id, 
+    public CategoryResponse updateCategory(@PathVariable Long id,
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody CategoryRequest request) {
         return budgetCategoryService.updateCategory(userId, id, request);
     }
-    
 
     // 삭제: DELETE /api/categories/{id}
     @DeleteMapping("/{id}")

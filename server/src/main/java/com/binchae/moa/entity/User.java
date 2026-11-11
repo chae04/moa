@@ -8,25 +8,25 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-@Getter 
-@Setter 
-@NoArgsConstructor 
+@Getter
+@Setter
+@NoArgsConstructor
 public class User {
- 
-    @Id 
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column (nullable = false, unique = true)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column (nullable = false)
+    @Column(nullable = false)
     private String password;
 
-    @Column (name = "created_at")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @PrePersist 
+    @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
