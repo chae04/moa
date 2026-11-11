@@ -29,9 +29,9 @@ moa/
 ```
 config/      SecurityConfig, JwtProvider, JwtAuthFilter
 controller/  AuthController, UserController, CategoryController, BudgetRatioController,
-             TransactionController, HomeController
+             TransactionController, HomeController, StatsController
 service/     AuthService, UserService, BudgetCategoryService, BudgetRatioService,
-             TransactionService, HomeService
+             TransactionService, HomeService, StatsService
 repository/  User / BudgetCategory / BudgetRatio / Transaction
 entity/      User, BudgetCategory, BudgetRatio, Transaction
 dto/         요청·응답 객체
@@ -105,6 +105,8 @@ flutter run
 | PUT | `/api/transactions/{id}` | 거래 수정 (유형·수입 금액 변경 불가, 자동 거래 수정 불가) | 필요 |
 | DELETE | `/api/transactions/{id}` | 거래 삭제 (수입이면 자동 거래도 삭제) | 필요 |
 | GET | `/api/home?year=YYYY&month=M` | 홈 요약 (유형별 합계, 카테고리별 예산·사용액·잔액, 날짜별 지출, 일일 추천 예산) | 필요 |
+| GET | `/api/stats/categories?year=YYYY&month=M` | 해당 월 지출을 카테고리별로 합산 (금액 큰 순, 총지출 포함) | 필요 |
+| GET | `/api/stats/yearly?year=YYYY` | 1~12월 수입·지출·모은 돈 (모은 돈 = 수입 − 지출) | 필요 |
 
 인증이 필요한 요청은 헤더에 `Authorization: Bearer <토큰>` 을 붙입니다.
 에러 응답은 `{"message": "..."}` 형태로 통일합니다 (400 / 401 / 404 / 409).
