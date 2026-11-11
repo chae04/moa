@@ -9,6 +9,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -31,6 +33,14 @@ public class SecurityConfig {
                 // 회원가입/로그인은 토큰 없이 접근가능해야 하므로 열어둠
                 .requestMatchers("/api/auth/**", "/error").permitAll()
                 .anyRequest().authenticated()
+            )
+            // 토큰이 없거나 잘못되면 403 대신 401 + {"message"}로 응답
+            .exceptionHandling(e -> e
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"message\":\"로그인이 필요합니다.\"}");
+                })
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
