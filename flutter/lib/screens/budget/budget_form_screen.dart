@@ -30,6 +30,12 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
 
   bool isLoading = true;
 
+  // 화면에 보이는 카테고리 (삭제 예정 카테고리 제외)
+  List<BudgetCategoryModel> get visibleCategories => // get: 괄호 없이 필드처럼 쓰는 계산 속성
+      categories // 서버/DB에서 불러온 활성 카테고리 목록
+          .where((c) => c.id != widget.deleteCategoryId) // 삭제 예정 카테고리는 뺌
+          .toList();
+
   String selectedMonth =
       '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
 
@@ -131,98 +137,92 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                             Column(
                               children: [
                                 SizedBox(height: 8),
-                                ...categories
-                                    .where((c) => c.id != widget.deleteCategoryId)
-                                    .map((category) {
-                                      return Padding(
-                                        padding: EdgeInsets.only(bottom: 15),
-                                        child: Row(
-                                          children: [
-                                            // 카테고리 이름 (고정 너비)
-                                            SizedBox(
-                                              width: 60,
-                                              child: Text(
-                                                category.name,
-                                                style: TextStyle(fontSize: 13),
-                                              ),
-                                            ),
-                                            SizedBox(width: 8),
-                                            // 비율 입력 (짧게)
-                                            Expanded(
-                                              child: TextField(
-                                                controller: controllers[category.id],
-                                                decoration: inputDecoration('%'),
-                                                keyboardType: TextInputType.number,
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    budgetRatios[category.id] =
-                                                        int.tryParse(value) ?? 0;
-                                                  });
-                                                },
-                                              ),
-                                            ),
-                                            SizedBox(width: 10),
-
-                                            // 일일 예산 체크박스
-                                            GestureDetector(
-                                              onTap: () {
-                                                setState(
-                                                  () => includeInDaily[category.id] =
-                                                      !(includeInDaily[category.id] ??
-                                                          false),
-                                                );
-                                              },
-
-                                              child: Icon(
-                                                (includeInDaily[category.id] ?? false)
-                                                    ? Icons.calendar_month
-                                                    : Icons.calendar_month_outlined,
-                                                color:
-                                                    (includeInDaily[category.id] ?? false)
-                                                    ? primaryColor
-                                                    : Colors.grey[300],
-                                              ),
-                                            ),
-                                            SizedBox(width: 10),
-                                            // 홈화면 표시
-                                            GestureDetector(
-                                              onTap: () {
-                                                final currentShowOnHome =
-                                                    showOnHome[category.id] ?? false;
-                                                if (!currentShowOnHome &&
-                                                    showOnHome.values
-                                                            .where((v) => v)
-                                                            .length >=
-                                                        5) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        '홈화면에는 최대 5개까지 표시할 수 있어요',
-                                                      ),
-                                                    ),
-                                                  );
-                                                  return;
-                                                }
-                                                setState(
-                                                  () => showOnHome[category.id] =
-                                                      !currentShowOnHome,
-                                                );
-                                              },
-                                              child: Icon(
-                                                (showOnHome[category.id] ?? false)
-                                                    ? Icons.home
-                                                    : Icons.home_outlined,
-                                                color: (showOnHome[category.id] ?? false)
-                                                    ? primaryColor
-                                                    : Colors.grey[300],
-                                              ),
-                                            ),
-                                          ],
+                                ...visibleCategories.map((category) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(bottom: 15),
+                                    child: Row(
+                                      children: [
+                                        // 카테고리 이름 (고정 너비)
+                                        SizedBox(
+                                          width: 60,
+                                          child: Text(
+                                            category.name,
+                                            style: TextStyle(fontSize: 13),
+                                          ),
                                         ),
-                                      );
-                                    }),
+                                        SizedBox(width: 8),
+                                        // 비율 입력 (짧게)
+                                        Expanded(
+                                          child: TextField(
+                                            controller: controllers[category.id],
+                                            decoration: inputDecoration('%'),
+                                            keyboardType: TextInputType.number,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                budgetRatios[category.id] =
+                                                    int.tryParse(value) ?? 0;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                        SizedBox(width: 10),
+
+                                        // 일일 예산 체크박스
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(
+                                              () => includeInDaily[category.id] =
+                                                  !(includeInDaily[category.id] ?? false),
+                                            );
+                                          },
+
+                                          child: Icon(
+                                            (includeInDaily[category.id] ?? false)
+                                                ? Icons.calendar_month
+                                                : Icons.calendar_month_outlined,
+                                            color: (includeInDaily[category.id] ?? false)
+                                                ? primaryColor
+                                                : Colors.grey[300],
+                                          ),
+                                        ),
+                                        SizedBox(width: 10),
+                                        // 홈화면 표시
+                                        GestureDetector(
+                                          onTap: () {
+                                            final currentShowOnHome =
+                                                showOnHome[category.id] ?? false;
+                                            if (!currentShowOnHome &&
+                                                showOnHome.values
+                                                        .where((v) => v)
+                                                        .length >=
+                                                    5) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '홈화면에는 최대 5개까지 표시할 수 있어요',
+                                                  ),
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            setState(
+                                              () => showOnHome[category.id] =
+                                                  !currentShowOnHome,
+                                            );
+                                          },
+                                          child: Icon(
+                                            (showOnHome[category.id] ?? false)
+                                                ? Icons.home
+                                                : Icons.home_outlined,
+                                            color: (showOnHome[category.id] ?? false)
+                                                ? primaryColor
+                                                : Colors.grey[300],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
                                 Divider(color: Colors.grey[200]),
                                 SizedBox(height: 12),
                                 Padding(
@@ -290,11 +290,13 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                         child: ElevatedButton(
                           onPressed: () async {
                             final totalRatio =
-                                budgetRatios.entries
-                                    .where(
-                                      (e) => e.key != widget.deleteCategoryId,
-                                    ) // 삭제 예정 카테고리 제외
-                                    .fold(0, (sum, e) => sum + e.value) +
+                                visibleCategories.fold(
+                                  // 보이는 카테고리만 순회
+                                  0, // 시작값 0
+                                  (sum, c) =>
+                                      sum +
+                                      (budgetRatios[c.id] ?? 0), // 그 카테고리 비율을 더함, 없으면 0
+                                ) +
                                 savingRatio +
                                 investRatio;
 
@@ -308,20 +310,18 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                             }
 
                             // categories 배열로 변환
-                            final List<Map<String, dynamic>> cats = categories
-                                .where(
-                                  (c) => c.id != widget.deleteCategoryId,
-                                ) // 삭제 예정 카테고리 제외
-                                .map((c) {
-                                  return <String, dynamic>{
-                                    'categoryId': c.id,
-                                    'name': c.name,
-                                    'ratio': budgetRatios[c.id] ?? 0,
-                                    'amount': 0,
-                                    'includeInDaily': includeInDaily[c.id] ?? false,
-                                  };
-                                })
-                                .toList();
+                            final List<Map<String, dynamic>> cats =
+                                visibleCategories // 삭제 예정 카테고리 제외
+                                    .map((c) {
+                                      return <String, dynamic>{
+                                        'categoryId': c.id,
+                                        'name': c.name,
+                                        'ratio': budgetRatios[c.id] ?? 0,
+                                        'amount': 0,
+                                        'includeInDaily': includeInDaily[c.id] ?? false,
+                                      };
+                                    })
+                                    .toList();
 
                             // BudgetModel 생성
                             final budget = BudgetModel(

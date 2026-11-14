@@ -7,13 +7,13 @@
 
 ## 기술 스택
 
-| 영역 | 사용 기술 |
-|---|---|
-| 앱 | Flutter (iOS / Android) |
+| 영역 | 사용 기술                                     |
+| ---- | --------------------------------------------- |
+| 앱   | Flutter (iOS / Android)                       |
 | 서버 | Spring Boot 4.1, Java 21, Gradle (Kotlin DSL) |
-| 인증 | Spring Security, JWT (jjwt 0.12), BCrypt |
-| DB | MySQL 8.4, Spring Data JPA (Hibernate) |
-| 배포 | Railway (예정) |
+| 인증 | Spring Security, JWT (jjwt 0.12), BCrypt      |
+| DB   | MySQL 8.4, Spring Data JPA (Hibernate)        |
+| 배포 | Railway (예정)                                |
 
 ## 폴더 구조
 
@@ -41,32 +41,41 @@ exception/   ApiException, GlobalExceptionHandler
 ## 서버 실행 방법
 
 ### 1. 요구 사항
+
 - Java 21
 - MySQL 8.4 (macOS: `brew install mysql@8.4`)
 
 ### 2. DB 준비
+
 ```bash
 brew services start mysql@8.4
 mysql -u root -e "CREATE DATABASE IF NOT EXISTS moa DEFAULT CHARACTER SET utf8mb4;"
 ```
+
 소켓 에러가 나면 `mysqld_safe --user=$(whoami) &` 로 직접 실행합니다.
 
 ### 3. 비밀 설정 파일 만들기
+
 `jwt.secret`은 git에 올리지 않습니다. 아래 파일을 직접 만들어야 서버가 시작됩니다.
 
 `server/src/main/resources/application-local.properties`
+
 ```properties
 # 32바이트 이상의 랜덤 문자열
 jwt.secret=여기에_긴_랜덤_문자열
 ```
+
 `application.properties`의 `spring.profiles.active=local` 설정으로 이 파일이 자동으로 합쳐집니다.
 DB 비밀번호를 설정했다면 `spring.datasource.password=...` 도 여기에 넣습니다.
 
 ### 4. 실행
+
 ```bash
 cd server
-./gradlew bootRun
+./gradlew bootRun (mac)
+.\gradlew.bat bootRun (windows)
 ```
+
 확인: 아래 [API](#api-현재-구현)의 회원가입 curl 예시로 응답이 오는지 확인합니다.
 
 ## 앱 실행 방법
@@ -89,29 +98,30 @@ flutter run
 
 ## API (현재 구현)
 
-| 메서드 | 경로 | 설명 | 인증 |
-|---|---|---|---|
-| POST | `/api/auth/signup` | 회원가입 | 불필요 |
-| POST | `/api/auth/login` | 로그인, JWT 발급 | 불필요 |
-| DELETE | `/api/users/me` | 회원 탈퇴 (본문 `{"password": "..."}`) | 필요 |
-| GET | `/api/categories` | 카테고리 목록 (삭제 제외, 순서대로) | 필요 |
-| POST | `/api/categories` | 카테고리 추가 | 필요 |
-| PUT | `/api/categories/{id}` | 카테고리 수정 (이름, 홈 표시, 일일 포함) | 필요 |
-| DELETE | `/api/categories/{id}` | 카테고리 소프트 삭제 | 필요 |
-| GET | `/api/budget-ratios?month=YYYY-MM` | 해당 월에 적용되는 예산 비율 조회 | 필요 |
-| PUT | `/api/budget-ratios` | 예산 비율 저장 (적용 시작 월 지정, 합계 100) | 필요 |
-| GET | `/api/transactions?year=YYYY&month=M` | 해당 월 거래 목록 (최신 날짜순) | 필요 |
-| POST | `/api/transactions` | 거래 추가 (수입이면 저축·투자 자동 생성) | 필요 |
-| PUT | `/api/transactions/{id}` | 거래 수정 (유형·수입 금액 변경 불가, 자동 거래 수정 불가) | 필요 |
-| DELETE | `/api/transactions/{id}` | 거래 삭제 (수입이면 자동 거래도 삭제) | 필요 |
-| GET | `/api/home?year=YYYY&month=M` | 홈 요약 (유형별 합계, 카테고리별 예산·사용액·잔액, 날짜별 지출, 일일 추천 예산) | 필요 |
-| GET | `/api/stats/categories?year=YYYY&month=M` | 해당 월 지출을 카테고리별로 합산 (금액 큰 순, 총지출 포함) | 필요 |
-| GET | `/api/stats/yearly?year=YYYY` | 1~12월 수입·지출·모은 돈 (모은 돈 = 수입 − 지출) | 필요 |
+| 메서드 | 경로                                      | 설명                                                                            | 인증   |
+| ------ | ----------------------------------------- | ------------------------------------------------------------------------------- | ------ |
+| POST   | `/api/auth/signup`                        | 회원가입                                                                        | 불필요 |
+| POST   | `/api/auth/login`                         | 로그인, JWT 발급                                                                | 불필요 |
+| DELETE | `/api/users/me`                           | 회원 탈퇴 (본문 `{"password": "..."}`)                                          | 필요   |
+| GET    | `/api/categories`                         | 카테고리 목록 (삭제 제외, 순서대로)                                             | 필요   |
+| POST   | `/api/categories`                         | 카테고리 추가                                                                   | 필요   |
+| PUT    | `/api/categories/{id}`                    | 카테고리 수정 (이름, 홈 표시, 일일 포함)                                        | 필요   |
+| DELETE | `/api/categories/{id}`                    | 카테고리 소프트 삭제                                                            | 필요   |
+| GET    | `/api/budget-ratios?month=YYYY-MM`        | 해당 월에 적용되는 예산 비율 조회                                               | 필요   |
+| PUT    | `/api/budget-ratios`                      | 예산 비율 저장 (적용 시작 월 지정, 합계 100)                                    | 필요   |
+| GET    | `/api/transactions?year=YYYY&month=M`     | 해당 월 거래 목록 (최신 날짜순)                                                 | 필요   |
+| POST   | `/api/transactions`                       | 거래 추가 (수입이면 저축·투자 자동 생성)                                        | 필요   |
+| PUT    | `/api/transactions/{id}`                  | 거래 수정 (유형·수입 금액 변경 불가, 자동 거래 수정 불가)                       | 필요   |
+| DELETE | `/api/transactions/{id}`                  | 거래 삭제 (수입이면 자동 거래도 삭제)                                           | 필요   |
+| GET    | `/api/home?year=YYYY&month=M`             | 홈 요약 (유형별 합계, 카테고리별 예산·사용액·잔액, 날짜별 지출, 일일 추천 예산) | 필요   |
+| GET    | `/api/stats/categories?year=YYYY&month=M` | 해당 월 지출을 카테고리별로 합산 (금액 큰 순, 총지출 포함)                      | 필요   |
+| GET    | `/api/stats/yearly?year=YYYY`             | 1~12월 수입·지출·모은 돈 (모은 돈 = 수입 − 지출)                                | 필요   |
 
 인증이 필요한 요청은 헤더에 `Authorization: Bearer <토큰>` 을 붙입니다.
 에러 응답은 `{"message": "..."}` 형태로 통일합니다 (400 / 401 / 404 / 409).
 
 예시:
+
 ```bash
 curl -X POST http://localhost:8080/api/auth/signup \
   -H "Content-Type: application/json" \
