@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
 import 'package:moa/services/auth_service.dart';
@@ -170,13 +171,10 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
                             setState(() => isLoading = true);
                             try {
                               // 회원가입 처리 (여기서 실행)
+                              // TODO: 기본 카테고리 + 비율 저장은 서버 API로 옮길 예정
                               await _authService.signUp(
                                 email: widget.email,
                                 password: widget.password,
-                                budgetCategories: categories,
-                                includeInDaily: includeInDaily,
-                                savingRatio: savingRatio,
-                                investRatio: investRatio,
                               );
 
                               if (mounted) {
@@ -186,10 +184,14 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
                                   (route) => false,
                                 );
                               }
-                            } catch (e) {
+                            } on DioException catch (e) {
+                              // 서버가 보낸 {"message": "..."} 를 그대로 표시 (예: "이미 사용 중인 이메일입니다.")
+                              final message =
+                                  e.response?.data?['message'] ?? '회원가입에 실패했어요.';
+
                               ScaffoldMessenger.of(
                                 context,
-                              ).showSnackBar(SnackBar(content: Text('회원가입 실패: $e')));
+                              ).showSnackBar(SnackBar(content: Text(message)));
                               if (mounted) setState(() => isLoading = false);
                             }
                           },

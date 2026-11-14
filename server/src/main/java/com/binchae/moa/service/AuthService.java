@@ -15,6 +15,13 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // 이메일 사용 가능 여부 (회원가입 첫 화면에서 중복 확인용)
+    // true = 가입 가능, false = 이미 가입된 이메일
+    public boolean isEmailAvailable(String email) {
+        return !userRepository.existsByEmail(email);
+    }
+
+
     // 회원가입
     public User signUp(String email, String password) {
         if (userRepository.existsByEmail(email)) {

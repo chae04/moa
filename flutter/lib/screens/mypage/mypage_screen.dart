@@ -5,6 +5,7 @@ import 'package:moa/screens/auth/login_screen.dart';
 import 'package:moa/screens/budget/budget_form_screen.dart';
 import 'package:moa/screens/budget/budget_category_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dio/dio.dart';
 
 class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
@@ -165,79 +166,34 @@ class _MypageScreenState extends State<MypageScreen> {
 
                         final password = await showDialog<String>(
                           context: context,
-                          builder: (context) => StatefulBuilder(
-                            builder: (context, setDialogState) {
-                              String? errorText;
-                              bool isVerifying = false;
-
-                              return StatefulBuilder(
-                                builder: (context, setDialogState) {
-                                  return AlertDialog(
-                                    backgroundColor: Colors.white,
-                                    title: Text('비밀번호 확인'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        TextField(
-                                          controller: passwordController,
-                                          decoration: InputDecoration(
-                                            labelText: '비밀번호',
-                                            errorText: errorText,
-                                          ),
-                                          obscureText: true,
-                                          autofocus: true,
-                                        ),
-                                      ],
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: Text('취소'),
-                                      ),
-                                      TextButton(
-                                        onPressed: isVerifying
-                                            ? null
-                                            : () async {
-                                                if (passwordController.text.isEmpty) {
-                                                  return;
-                                                }
-                                                setDialogState(() {
-                                                  isVerifying = true;
-                                                  errorText = null;
-                                                });
-                                                try {
-                                                  await _authService.reauthenticate(
-                                                    passwordController.text,
-                                                  );
-                                                  Navigator.pop(
-                                                    context,
-                                                    passwordController.text,
-                                                  );
-                                                } catch (e) {
-                                                  setDialogState(() {
-                                                    isVerifying = false;
-                                                    errorText = '비밀번호가 틀렸습니다.';
-                                                  });
-                                                }
-                                              },
-                                        child: isVerifying
-                                            ? SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
-                                              )
-                                            : Text(
-                                                '확인',
-                                                style: TextStyle(color: primaryColor),
-                                              ),
-                                      ),
-                                    ],
-                                  );
+                          builder: (context) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            title: Text('비밀번호 확인'),
+                            content: TextField(
+                              controller: passwordController,
+                              decoration: InputDecoration(labelText: '비밀번호'),
+                              obscureText: true,
+                              autofocus: true,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text('취소'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  if (passwordController.text.isEmpty) {
+                                    return;
+                                  }
+                                  // 비밀번호 확인은 서버가 탈퇴 요청에서 처리
+                                  Navigator.pop(context, passwordController.text);
                                 },
-                              );
-                            },
+                                child: Text(
+                                  '확인',
+                                  style: TextStyle(color: primaryColor),
+                                ),
+                              ),
+                            ],
                           ),
                         );
 
@@ -256,12 +212,9 @@ class _MypageScreenState extends State<MypageScreen> {
                               (route) => false,
                             );
                           }
-                        } catch (e) {
-                          String message = '탈퇴 실패';
-                          if (e.toString().contains('wrong-password') ||
-                              e.toString().contains('invalid-credential')) {
-                            message = '비밀번호가 틀렸습니다.';
-                          }
+                        } on DioException catch (e) {
+                          // 서버가 보낸 {"message": "..."} 를 그대로 표시 (예: "비밀번호가 올바르지 않습니다.")
+                          final message = e.response?.data?['message'] ?? '탈퇴 실패';
                           ScaffoldMessenger.of(
                             context,
                           ).showSnackBar(SnackBar(content: Text(message)));
