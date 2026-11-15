@@ -4,7 +4,7 @@ import 'package:moa/services/auth_service.dart';
 import 'package:moa/screens/auth/login_screen.dart';
 import 'package:moa/screens/budget/budget_form_screen.dart';
 import 'package:moa/screens/budget/budget_category_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:moa/services/user_service.dart';
 import 'package:dio/dio.dart';
 
 class MypageScreen extends StatefulWidget {
@@ -16,11 +16,26 @@ class MypageScreen extends StatefulWidget {
 
 class _MypageScreenState extends State<MypageScreen> {
   final AuthService _authService = AuthService();
+  final UserService _userService = UserService(); // 내 정보 조회용
   bool isDeleting = false;
+  String email = ''; // 서버에서 받아 오기 전에는 빈 문자열
 
   @override
   void initState() {
     super.initState();
+    _loadEmail(); // 화면이 처음 만들어질 때 한 번 서버에서 이메일 가져오기
+  }
+
+  // 서버에서 내 이메일 가져오기
+  Future<void> _loadEmail() async {
+    try {
+      final result = await _userService.getMyEmail();
+      if (!mounted) return; // 요청하는 동안 화면을 벗어났으면 setState 하지 않음
+      setState(() => email = result); // 받은 이메일을 화면에 반영
+    } on DioException catch (e) {
+      // 실패해도 마이페이지는 쓸 수 있게 이메일만 비워 둠 (토큰 만료 처리는 TODO 92)
+      print('이메일 조회 실패: ${e.response?.statusCode}');
+    }
   }
 
   Widget _buildMenuItem({
@@ -73,7 +88,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       ),
                       SizedBox(width: 12),
                       Text(
-                        FirebaseAuth.instance.currentUser?.email ?? '',
+                        email, // 서버에서 받아 온 이메일
                         style: TextStyle(fontSize: 14),
                       ),
                     ],
@@ -188,10 +203,7 @@ class _MypageScreenState extends State<MypageScreen> {
                                   // 비밀번호 확인은 서버가 탈퇴 요청에서 처리
                                   Navigator.pop(context, passwordController.text);
                                 },
-                                child: Text(
-                                  '확인',
-                                  style: TextStyle(color: primaryColor),
-                                ),
+                                child: Text('확인', style: TextStyle(color: primaryColor)),
                               ),
                             ],
                           ),

@@ -1,4 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
+// [역할] 앱 시작점
+// - 앱에 필요한 초기화(날짜 포맷, Firebase)를 한 뒤 앱을 실행한다.
+// - 저장된 토큰이 있으면 홈(ShellScreen), 없으면 로그인 화면(LoginScreen)으로 시작한다.
+// - 앱 전체 테마(색, 버튼, 입력칸 스타일)를 정한다.
+
+import 'package:moa/services/token_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:moa/screens/shell_screen.dart';
@@ -12,11 +17,14 @@ void main() async {
   await initializeDateFormatting('ko_KR');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  runApp(const MyApp());
+  // 저장된 토큰이 있으면 로그인된 상태로 시작
+  final token = await TokenStorage.getToken();
+  runApp(MyApp(isLoggedIn: token != null));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn; // main()에서 토큰 존재 여부를 받아 옴
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -48,22 +56,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // StreamBuilder : Firebase Auth 상태가 바뀔 때마다 자동으로 화면을 바꿔줌
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          // 로딩 중
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
-          }
-          // 로그인 상태 : 홈 화면
-          if (snapshot.hasData) {
-            return ShellScreen();
-          }
-          // 로그아웃 상태: 로그인 화면
-          return LoginScreen();
-        },
-      ),
+      // 앱 시작 화면: 토큰이 있으면 홈, 없으면 로그인 화면
+      // (로그인/로그아웃 후 화면 이동은 각 화면에서 Navigator로 처리)
+      home: isLoggedIn ? ShellScreen() : LoginScreen(),
     );
   }
 }
