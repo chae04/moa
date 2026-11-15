@@ -103,6 +103,7 @@ flutter run
 | POST   | `/api/auth/signup`                        | 회원가입                                                                        | 불필요 |
 | POST   | `/api/auth/login`                         | 로그인, JWT 발급                                                                | 불필요 |
 | GET    | `/api/auth/check-email?email=...`         | 이메일 사용 가능 여부 (`{"available": true/false}`, 회원가입 첫 화면에서 사용)  | 불필요 |
+| GET    | `/api/users/me`                           | 내 정보 조회 (`{"email": "..."}`)                                               | 필요   |
 | DELETE | `/api/users/me`                           | 회원 탈퇴 (본문 `{"password": "..."}`)                                          | 필요   |
 | GET    | `/api/categories`                         | 카테고리 목록 (삭제 제외, 순서대로)                                             | 필요   |
 | POST   | `/api/categories`                         | 카테고리 추가                                                                   | 필요   |

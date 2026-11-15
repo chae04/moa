@@ -37,8 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계
   Map<String, int> expenseByCategory = initialExpenseByCategory;
-  Map<String, int> usedByBudgetCategory = {};
-  Map<String, int> budgetByCategory = {};
+  Map<int, int> usedByBudgetCategory = {};
+  Map<int, int> budgetByCategory = {};
 
   @override
   void initState() {
@@ -81,8 +81,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // ID 기준으로 초기화
-    Map<String, int> tempUsed = {for (var c in budgetCategories) c.id: 0};
-    Map<String, int> tempBudget = {for (var c in budgetCategories) c.id: 0};
+    Map<int, int> tempUsed = {for (var c in budgetCategories) c.id: 0};
+    Map<int, int> tempBudget = {for (var c in budgetCategories) c.id: 0};
 
     setState(() {
       budgetCategories = cats.where((c) => c.showOnHome).toList();
@@ -112,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (budgetData != null) {
       setState(() {
         for (var c in budgetData.categories) {
-          final categoryId = c['categoryId'] as String?;
+          final categoryId = c['categoryId'] as int?;
           if (categoryId != null) {
             tempBudget[categoryId] = (income * (c['ratio'] as int) / 100).round();
           }
@@ -125,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (userBudget != null) {
       int totalRemaining = 0;
       for (var c in userBudget.categories) {
-        final categoryId = c['categoryId'] as String?;
+        final categoryId = c['categoryId'] as int?;
         if (categoryId != null && c['includeInDaily'] == true) {
           final b = budgetByCategory[categoryId] ?? 0;
           final used = usedByBudgetCategory[categoryId] ?? 0;
@@ -160,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProgressBar(String categoryId, String categoryName) {
+  Widget _buildProgressBar(int categoryId, String categoryName) {
     final budget = budgetByCategory[categoryId] ?? 0;
     final used = usedByBudgetCategory[categoryId] ?? 0;
     final balance = budget - used;

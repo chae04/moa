@@ -18,7 +18,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   late int transactionPrice;
   late String transactionType;
   late String transactionCategory;
-  late String? budgetCategoryId;
+  late int? budgetCategoryId;
   late String date;
   late String memo;
 
@@ -51,10 +51,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     final cat = budgetCategories.firstWhere(
       (c) => c.id == budgetCategoryId,
       orElse: () => BudgetCategoryModel(
-        id: '',
-        userId: '',
+        id: 0,
         name: '삭제된 카테고리',
-        order: 0,
+        orderIndex: 0,
         includeInDaily: false,
         showOnHome: false,
       ),

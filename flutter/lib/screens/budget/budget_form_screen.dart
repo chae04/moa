@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/constants/styles.dart';
 
 class BudgetFormScreen extends StatefulWidget {
-  final String? deleteCategoryId; // 삭제할 카테고리 ID
+  final int? deleteCategoryId; // 삭제할 카테고리 ID
   BudgetFormScreen({super.key, this.deleteCategoryId});
   @override
   State<BudgetFormScreen> createState() => _BudgetScreenState();
@@ -17,12 +17,12 @@ class BudgetFormScreen extends StatefulWidget {
 class _BudgetScreenState extends State<BudgetFormScreen> {
   final BudgetService _budgetService = BudgetService();
   final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
-  Map<String, bool> showOnHome = {};
+  Map<int, bool> showOnHome = {};
 
   List<BudgetCategoryModel> categories = [];
-  Map<String, int> budgetRatios = {};
-  Map<String, bool> includeInDaily = {};
-  Map<String, TextEditingController> controllers = {};
+  Map<int, int> budgetRatios = {};
+  Map<int, bool> includeInDaily = {};
+  Map<int, TextEditingController> controllers = {};
   final savingRatioController = TextEditingController();
   final investRatioController = TextEditingController();
   int savingRatio = 0;
@@ -73,7 +73,7 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
         savingRatioController.text = userBudget.savingRatio.toString();
         investRatioController.text = userBudget.investRatio.toString();
         for (var c in userBudget.categories) {
-          final categoryId = c['categoryId'] as String?;
+          final categoryId = c['categoryId'] as int?;
           if (categoryId != null) {
             budgetRatios[categoryId] = c['ratio'] ?? 0;
             controllers[categoryId]?.text = (c['ratio'] ?? 0).toString();
@@ -343,7 +343,14 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                             }
 
                             // showOnHome, includeInDaily 업데이트
-                            for (var c in categories) {
+                            // - visibleCategories: 방금 삭제한 카테고리는 서버에서 404가 나므로 제외
+                            // - 정렬: 홈 표시를 끄는 카테고리를 먼저 보내야 서버의 "홈 최대 5개" 검사에 걸리지 않음
+                            final toUpdate = [...visibleCategories]
+                              ..sort(
+                                (a, b) => ((showOnHome[a.id] ?? false) ? 1 : 0)
+                                    .compareTo((showOnHome[b.id] ?? false) ? 1 : 0),
+                              );
+                            for (var c in toUpdate) {
                               c.showOnHome = showOnHome[c.id] ?? false;
                               c.includeInDaily = includeInDaily[c.id] ?? false;
                               await _budgetCategoryService.updateCategory(c);

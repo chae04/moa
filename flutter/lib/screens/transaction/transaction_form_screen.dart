@@ -43,7 +43,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   String selectedTransactionCategory = '식비';
   DateTime selectedDate = DateTime.now();
 
-  String selectedBudgetCategoryId = '';
+  int? selectedBudgetCategoryId; // 선택된 예산 카테고리 ID (선택 전에는 null)
 
   @override
   void initState() {
@@ -69,7 +69,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
       transactionPrice.text = widget.transaction!.amount.toString();
       selectedTransactionType = widget.transaction!.type;
       selectedTransactionCategory = widget.transaction!.category;
-      selectedBudgetCategoryId = widget.transaction!.budgetCategoryId ?? ''; // 변경
+      selectedBudgetCategoryId = widget.transaction!.budgetCategoryId; // 변경
       selectedDate = widget.transaction!.date;
       transactionMemo.text = widget.transaction!.memo ?? ''; // null일 때 기본값
     }
@@ -229,25 +229,23 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
                 // 저축일 때 차감할 예산 선택
                 if (selectedTransactionType == '저축') ...[
-                  DropdownButtonFormField(
+                  DropdownButtonFormField<int>(
                     decoration: inputDecoration('예산 출처'),
-                    value: selectedBudgetCategoryId.isEmpty
-                        ? null
-                        : selectedBudgetCategoryId,
+                    value: selectedBudgetCategoryId,
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     items: budgetCategories
                         .where((c) => c.name != '저축')
-                        .map<DropdownMenuItem<String>>((c) {
-                          return DropdownMenuItem<String>(
+                        .map<DropdownMenuItem<int>>((c) {
+                          return DropdownMenuItem<int>(
                             value: c.id,
                             child: Text(c.name, style: TextStyle(fontSize: 14)),
                           );
                         })
                         .toList(),
-                    onChanged: (String? newValue) {
+                    onChanged: (int? newValue) {
                       setState(() {
-                        selectedBudgetCategoryId = newValue!;
+                        selectedBudgetCategoryId = newValue;
                       });
                     },
                   ),
@@ -256,25 +254,23 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
                 // 예산 카테고리 드롭다운 (지출일 때만 표시)
                 if (selectedTransactionType == '지출') ...[
-                  DropdownButtonFormField<String>(
+                  DropdownButtonFormField<int>(
                     decoration: inputDecoration('예산 카테고리'),
-                    value: selectedBudgetCategoryId.isEmpty
-                        ? null
-                        : selectedBudgetCategoryId,
+                    value: selectedBudgetCategoryId,
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     items: budgetCategories
                         .where((c) => c.name != '저축') // 저축 제외
-                        .map<DropdownMenuItem<String>>((c) {
-                          return DropdownMenuItem<String>(
+                        .map<DropdownMenuItem<int>>((c) {
+                          return DropdownMenuItem<int>(
                             value: c.id,
                             child: Text(c.name),
                           );
                         })
                         .toList(),
-                    onChanged: (String? newValue) {
+                    onChanged: (int? newValue) {
                       setState(() {
-                        selectedBudgetCategoryId = newValue!;
+                        selectedBudgetCategoryId = newValue;
                       });
                     },
                   ),

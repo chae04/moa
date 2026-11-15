@@ -85,7 +85,7 @@
 - [x] 토큰 저장 (`flutter_secure_storage`)
 - [x] AuthService 교체 (가입 / 로그인 / 로그아웃 / 탈퇴)
   - 마이페이지 이메일: 지금은 `FirebaseAuth.instance.currentUser?.email`로 표시. 전환 후에는 로그인할 때 이메일을 저장해 두거나 서버에 `GET /api/users/me`를 다시 만들어야 함
-- [ ] 로그인 상태 유지 (토큰 존재 여부로 판단)
+- [x] 로그인 상태 유지 (토큰 존재 여부로 판단)
 - [ ] BudgetCategoryService 교체
 - [ ] BudgetService 교체 (비율)
   - 카테고리 삭제 흐름(`deleteCategoryId`가 있을 때)에서는 적용 시작 월을 이번 달로 고정. 다음 달 이후로 저장하면 이번 달 비율에 그 카테고리가 남아 서버가 삭제를 400으로 막음

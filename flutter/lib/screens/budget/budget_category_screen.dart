@@ -106,15 +106,10 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                   category.showOnHome = showOnHome;
                   await _budgetCategoryService.updateCategory(category);
                 } else {
-                  final newCategory = BudgetCategoryModel(
-                    id: '',
-                    userId: '',
+                  await _budgetCategoryService.addCategory(
                     name: controller.text,
-                    order: categories.length,
-                    includeInDaily: false,
                     showOnHome: showOnHome,
                   );
-                  await _budgetCategoryService.addCategory(newCategory);
                 }
 
                 // 카테고리 추가하면 예산 비율 설정 폼으로 안내

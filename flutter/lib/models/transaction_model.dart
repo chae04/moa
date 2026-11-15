@@ -7,7 +7,7 @@ class TransactionModel {
   int amount;
   String type; // income / expense / saving
   String category;
-  String? budgetCategoryId; // expense / saving만 사용, 수입은 null (? : null 허용)
+  int? budgetCategoryId; // expense / saving만 사용, 수입은 null (? : null 허용)
   DateTime date;
   String? memo;
   final DateTime createdAt;
