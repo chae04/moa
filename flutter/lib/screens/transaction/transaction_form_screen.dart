@@ -345,14 +345,13 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
                                 // 수입이면 설정된 비율만큼 저축 자동 생성
                                 if (selectedTransactionType == '수입') {
-                                  final userBudget = await _budgetService.getUserBudget();
-                                  if (userBudget != null) {
-                                    final savingCategory = userBudget.categories
-                                        .firstWhere(
-                                          (c) => c['name'] == '저축',
-                                          orElse: () => {'ratio': 0},
-                                        );
-                                    final savingRatio = savingCategory['ratio'] as int;
+                                  // 임시 (TransactionService 교체 때 삭제): 서버로 바꾸면 서버가 자동 저축·투자를 만듦
+                                  // 저축 비율은 '저축' 카테고리가 아니라 비율 묶음의 savingRatio 필드
+                                  final month =
+                                      '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}';
+                                  final budget = await _budgetService.getRatios(month);
+                                  {
+                                    final savingRatio = budget.savingRatio;
 
                                     if (savingRatio > 0) {
                                       final savingAmount =

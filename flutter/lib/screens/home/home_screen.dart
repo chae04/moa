@@ -66,7 +66,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final monthStr = '$y-${m.toString().padLeft(2, '0')}';
 
     final transactions = await _transactionService.getMonthlyTransactions(y, m);
-    final userBudget = await _budgetService.getUserBudget();
+    // 임시 (홈 API 교체 때 삭제): 그 달에 적용되는 비율 묶음. 어느 묶음인지는 서버가 고름
+    final budget = await _budgetService.getRatios(monthStr);
 
     final income = transactions
         .where((t) => t.type == '수입')
@@ -105,32 +106,23 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     // 예산 불러오기
-    final budget = await _budgetService.getBudget(monthStr);
-    final budgetData = budget ?? userBudget;
-    print('budget: $budget');
-    print('userBudget: $userBudget');
-    if (budgetData != null) {
+    if (budget.applyFrom != null) {
       setState(() {
-        for (var c in budgetData.categories) {
-          final categoryId = c['categoryId'] as int?;
-          if (categoryId != null) {
-            tempBudget[categoryId] = (income * (c['ratio'] as int) / 100).round();
-          }
+        for (var c in budget.categories) {
+          tempBudget[c.categoryId] = (income * c.ratio / 100).round();
         }
         budgetByCategory = tempBudget;
       });
     }
 
     // dailyBudget 계산
-    if (userBudget != null) {
+    if (budget.applyFrom != null) {
       int totalRemaining = 0;
-      for (var c in userBudget.categories) {
-        final categoryId = c['categoryId'] as int?;
-        if (categoryId != null && c['includeInDaily'] == true) {
-          final b = budgetByCategory[categoryId] ?? 0;
-          final used = usedByBudgetCategory[categoryId] ?? 0;
-          totalRemaining += (b - used);
-        }
+      // 일일 포함 여부는 비율이 아니라 카테고리에 저장됨
+      for (var c in cats.where((c) => c.includeInDaily)) {
+        final b = budgetByCategory[c.id] ?? 0;
+        final used = usedByBudgetCategory[c.id] ?? 0;
+        totalRemaining += (b - used);
       }
       final now = DateTime.now();
       final lastDay = DateTime(now.year, now.month + 1, 0);
