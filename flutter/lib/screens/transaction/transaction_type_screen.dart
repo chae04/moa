@@ -24,6 +24,8 @@ class TransactionTypeScreen extends StatelessWidget {
                 _buildTypeButton(context, '지출', Colors.red),
                 SizedBox(height: 16),
                 _buildTypeButton(context, '저축', Colors.green),
+                SizedBox(height: 16),
+                _buildTypeButton(context, '투자', Colors.green),
               ],
             ),
             SizedBox(

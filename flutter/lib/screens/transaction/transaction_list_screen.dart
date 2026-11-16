@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
@@ -191,12 +192,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         final transaction = transactions[index];
                         final isIncome = transaction.type == '수입';
                         final isSaving = transaction.type == '저축';
+                        final isInvest = transaction.type == '투자';
                         final amountColor = isIncome
                             ? Colors.blue
-                            : isSaving
+                            : isSaving || isInvest
                             ? Colors.green
                             : Colors.red;
-                        final amountPrefix = isIncome ? '+' : '-';
+                        // 수입 +, 지출 -, 저축·투자는 내 돈이 늘거나 준 게 아니라 옮긴 것이라 부호 없음
+                        final amountPrefix = isIncome
+                            ? '+'
+                            : isSaving || isInvest
+                            ? ''
+                            : '-';
 
                         return Container(
                           margin: EdgeInsets.only(bottom: 8),
@@ -239,7 +246,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                       SizedBox(height: 16),
                                       Divider(color: Colors.grey[200]),
 
-                                      // 수정 버튼
+                                      // 수정 버튼 (자동 거래는 서버가 수정을 막으므로 숨김)
+                                      if (!transaction.isAuto)
                                       ListTile(
                                         leading: Container(
                                           padding: EdgeInsets.all(8),
@@ -296,7 +304,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
                                               title: Text('거래 삭제'),
                                               content: Text(
-                                                '${transaction.title} 삭제할까요?',
+                                                // 수입을 지우면 서버가 자동 저축·투자도 같이 지움 → 미리 알림
+                                                transaction.type == '수입'
+                                                    ? '${transaction.title} 삭제할까요?\n이 수입으로 만들어진 자동 저축·투자도 함께 삭제됩니다.'
+                                                    : '${transaction.title} 삭제할까요?',
                                               ),
                                               actions: [
                                                 TextButton(
@@ -317,10 +328,20 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                           );
 
                                           if (confirm == true) {
-                                            await _transactionService.deleteTransaction(
-                                              transaction.id,
-                                            );
-                                            _loadTransactions();
+                                            try {
+                                              await _transactionService.deleteTransaction(
+                                                transaction.id,
+                                              );
+                                            } on DioException catch (e) {
+                                              // 이미 지워진 거래(404), 서버 꺼짐 등
+                                              if (!mounted) return;
+                                              final message =
+                                                  e.response?.data?['message'] ?? '삭제에 실패했어요.';
+                                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                                SnackBar(content: Text(message)),
+                                              );
+                                            }
+                                            _loadTransactions(); // 실패해도 서버 기준으로 목록 새로고침
                                           }
                                         },
                                       ),
@@ -353,6 +374,27 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                               fontSize: 12,
                                             ),
                                           ),
+                                          // 수입 입력 시 서버가 만든 자동 저축·투자 표시
+                                          if (transaction.isAuto) ...[
+                                            SizedBox(width: 6),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                '자동',
+                                                style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ],
