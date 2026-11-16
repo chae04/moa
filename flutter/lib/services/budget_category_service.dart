@@ -39,16 +39,4 @@ class BudgetCategoryService {
   Future<void> deleteCategory(int id) async {
     await _dio.delete('/api/categories/$id');
   }
-
-  // 기본 카테고리 초기 생성 (회원가입 시, TODO 91에서 사용)
-  // 서버에 일괄 생성 API가 없어서 하나씩 추가. 홈 표시는 최대 5개라 앞의 5개만 켬
-  Future<void> createDefaultCategories(List<Map<String, dynamic>> categories) async {
-    for (var i = 0; i < categories.length; i++) {
-      await addCategory(
-        name: categories[i]['name'],
-        showOnHome: i < 5,
-        includeInDaily: categories[i]['includeInDaily'] ?? false,
-      );
-    }
-  }
 }

@@ -84,10 +84,10 @@
 - [x] `dio` 패키지 추가, API 공통 클라이언트 (baseUrl, 토큰 헤더)
 - [x] 토큰 저장 (`flutter_secure_storage`)
 - [x] AuthService 교체 (가입 / 로그인 / 로그아웃 / 탈퇴)
-  - 마이페이지 이메일: 지금은 `FirebaseAuth.instance.currentUser?.email`로 표시. 전환 후에는 로그인할 때 이메일을 저장해 두거나 서버에 `GET /api/users/me`를 다시 만들어야 함
+  - 마이페이지 이메일: 지금은 `FirebaseAuth.instance.cuㅏrrentUser?.email`로 표시. 전환 후에는 로그인할 때 이메일을 저장해 두거나 서버에 `GET /api/users/me`를 다시 만들어야 함
 - [x] 로그인 상태 유지 (토큰 존재 여부로 판단)
-- [ ] BudgetCategoryService 교체
-- [ ] BudgetService 교체 (비율)
+- [x] BudgetCategoryService 교체
+- [x] BudgetService 교체 (비율)
   - 카테고리 삭제 흐름(`deleteCategoryId`가 있을 때)에서는 적용 시작 월을 이번 달로 고정. 다음 달 이후로 저장하면 이번 달 비율에 그 카테고리가 남아 서버가 삭제를 400으로 막음
 - [ ] TransactionService 교체
   - 자동 투자: HANDOFF에는 저축·투자가 자동 생성된다고 되어 있지만, Flutter는 저축만 만듭니다. 서버는 HANDOFF 기준으로 둘 다 만듭니다.
@@ -145,6 +145,12 @@
 - 플레이스토어 / 앱스토어 등록
 - 예산 없을 때 안내 문구
 - 로그인 시도 제한, 비밀번호 정책 강화
+- 비율 테이블 정규화: 지금은 `budget_ratios` 한 테이블에 저축·투자 비율(묶음 단위 값)을 카테고리 행마다 반복 저장 (비정규화)
+  - 이유: 저축·투자는 카테고리가 아니라 `budget_category_id`(NOT NULL FK)를 가질 수 없어서 열로 둠
+  - 지금 불일치가 안 생기는 이유: 저장할 때 묶음 전체를 지우고 다시 넣음 (`deleteByUserAndApplyFrom` + `saveAll`)
+  - 숨은 제약: 카테고리가 0개면 저축·투자 비율을 저장할 곳이 없음 (그래서 요청 DTO에 `@NotEmpty`)
+  - 개선안: `budget_ratio_sets(user_id, apply_from, saving_ratio, invest_ratio)` + `budget_ratio_items(set_id, budget_category_id, ratio)`로 분리
+  - 수정 범위: 엔티티 2개, Repository JPQL, BudgetRatioService, HomeService·StatsService의 비율 조회, 기존 데이터 이전
 
 ---
 

@@ -22,7 +22,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     public TokenResponse signUp(@Valid @RequestBody SignUpRequest request) {
-        User user = authService.signUp(request.getEmail(), request.getPassword());
+        User user = authService.signUp(request);
         String token = jwtProvider.createToken(user.getId());
         return new TokenResponse(token);
     }
@@ -39,7 +39,7 @@ public class AuthController {
     @GetMapping("/check-email")
     public EmailCheckResponse checkEmail(@RequestParam String email) {
         boolean available = authService.isEmailAvailable(email); // Service: 비즈니스 결과(boolean)
-        return new EmailCheckResponse(available);                // Controller: 응답 모양(DTO)으로 감싸기
+        return new EmailCheckResponse(available); // Controller: 응답 모양(DTO)으로 감싸기
     }
 
 }

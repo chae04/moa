@@ -12,15 +12,29 @@ class AuthService {
   final Dio _dio = ApiClient.dio; // 공통 클라이언트 (baseUrl, 토큰 헤더 설정 완료된 것)
 
   // 회원가입
-  // 계정만 만든다. 기본 카테고리와 비율 저장은 각 서비스 API로 처리.
-  Future<void> signUp({required String email, required String password}) async {
+  // 계정 + 기본 카테고리 + 첫 비율(이번 달부터)을 서버가 한 트랜잭션으로 저장한다.
+  // 하나라도 실패하면 서버가 전부 롤백 → 같은 이메일로 다시 가입 가능
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required int savingRatio,
+    required int investRatio,
+    required List<Map<String, dynamic>> categories, // [{name, includeInDaily, ratio}, ...]
+  }) async {
     final response = await _dio.post(
       '/api/auth/signup', // baseUrl 뒤에 붙는 경로
-      data: {'email': email, 'password': password}, // 서버 SignUpRequest와 같은 필드 이름
+      data: {
+        'email': email,
+        'password': password,
+        'savingRatio': savingRatio,
+        'investRatio': investRatio,
+        'categories': categories, // List<Map>은 dio가 JSON 배열로 바꿔 줌
+      }, // 서버 SignUpRequest와 같은 필드 이름
     );
     // 서버 응답: {"token": "eyJ..."} → dio가 Map으로 바꿔 줌
     await TokenStorage.saveToken(response.data['token']);
   }
+
 
   // 로그인
   Future<void> signIn({required String email, required String password}) async {

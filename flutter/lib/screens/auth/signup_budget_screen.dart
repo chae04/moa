@@ -170,12 +170,24 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
 
                             setState(() => isLoading = true);
                             try {
-                              // 회원가입 처리 (여기서 실행)
-                              // TODO: 기본 카테고리 + 비율 저장은 서버 API로 옮길 예정
+                              // 회원가입 + 기본 카테고리 + 비율을 서버에 한 번에 저장
                               await _authService.signUp(
                                 email: widget.email,
                                 password: widget.password,
+                                savingRatio: savingRatio,
+                                investRatio: investRatio,
+                                categories: categories
+                                    .map(
+                                      (c) => <String, dynamic>{
+                                        'name': c['name'],
+                                        // 체크 상태는 categories가 아니라 includeInDaily 맵에 저장되어 있음
+                                        'includeInDaily': includeInDaily[c['name']] ?? false,
+                                        'ratio': c['ratio'],
+                                      },
+                                    )
+                                    .toList(),
                               );
+
 
                               if (mounted) {
                                 Navigator.pushAndRemoveUntil(
