@@ -31,14 +31,14 @@ public class UserService {
     public UserResponse getMe(Long userId) {
         // userId로 사용자 찾기, 없으면 404 예외
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "다시 로그인해주세요."));
         return UserResponse.from(user); // 엔티티 → DTO 변환 (password는 빠짐)
     }
 
     @Transactional
     public void withdraw(Long userId, String password) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "다시 로그인해주세요."));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "비밀번호가 올바르지 않습니다.");

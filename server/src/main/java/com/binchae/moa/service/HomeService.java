@@ -154,6 +154,7 @@ public class HomeService {
 
     private User findUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+                // 토큰은 유효하지만 주인이 없음(탈퇴) = 인증 실패 → 401 (Flutter는 401이면 로그아웃 처리)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "다시 로그인해주세요."));
     }
 }
