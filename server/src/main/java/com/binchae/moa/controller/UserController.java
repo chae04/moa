@@ -6,7 +6,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 
+import com.binchae.moa.dto.UserResponse;
 import com.binchae.moa.dto.WithdrawRequest;
 import com.binchae.moa.service.UserService;
 
@@ -19,6 +21,13 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserService userService;
+
+    // 내 정보 조회: GET /api/users/me
+    // 누구인지는 토큰으로 판단 (JwtAuthFilter가 넣어 준 userId)
+    @GetMapping("/me")
+    public UserResponse getMe(@AuthenticationPrincipal Long userId) {
+        return userService.getMe(userId);
+    }
 
     @DeleteMapping("/me")
     public ResponseEntity<Void> withdraw(

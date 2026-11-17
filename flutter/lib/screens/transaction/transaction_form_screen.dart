@@ -1,5 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/services/budget_category_service.dart';
@@ -7,7 +8,6 @@ import 'package:moa/services/transaction_service.dart';
 import 'package:moa/constants/categories.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
-import 'package:moa/services/budget_service.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? transaction; // null이면 새 거래 추가, 있으면 기존 거래 수정
@@ -23,7 +23,6 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   final transactionPrice = TextEditingController();
   final transactionName = TextEditingController();
   final transactionMemo = TextEditingController();
-  final BudgetService _budgetService = BudgetService(); // 수입 저장할 때 저축 자동 생성
   final TransactionService _transactionService = TransactionService();
 
   List<BudgetCategoryModel> budgetCategories = [];
@@ -43,7 +42,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   String selectedTransactionCategory = '식비';
   DateTime selectedDate = DateTime.now();
 
-  String selectedBudgetCategoryId = '';
+  int? selectedBudgetCategoryId; // 선택된 예산 카테고리 ID (선택 전에는 null)
 
   @override
   void initState() {
@@ -69,7 +68,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
       transactionPrice.text = widget.transaction!.amount.toString();
       selectedTransactionType = widget.transaction!.type;
       selectedTransactionCategory = widget.transaction!.category;
-      selectedBudgetCategoryId = widget.transaction!.budgetCategoryId ?? ''; // 변경
+      selectedBudgetCategoryId = widget.transaction!.budgetCategoryId; // 변경
       selectedDate = widget.transaction!.date;
       transactionMemo.text = widget.transaction!.memo ?? ''; // null일 때 기본값
     }
@@ -133,13 +132,52 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   }
 
   Future<void> _loadBudgetCategories() async {
-    final cats = await _budgetCategoryService.getCategories();
+    final List<BudgetCategoryModel> cats;
+    try {
+      cats = await _budgetCategoryService.getCategories();
+    } catch (e) {
+      // 서버 꺼짐 등: 예산 카테고리 드롭다운만 비어 있게 두고 알림
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(apiErrorMessage(e, '예산 카테고리를 불러오지 못했어요.'))),
+      );
+      return;
+    }
+    if (!mounted) return;
     setState(() {
       budgetCategories = cats;
-      if (cats.isNotEmpty) {
+      // 수정 모드에서는 initState에서 기존 출처를 넣어 둠 → 비어 있을 때만 첫 번째로 채움
+      if (cats.isNotEmpty && selectedBudgetCategoryId == null) {
         selectedBudgetCategoryId = cats.first.id;
       }
     });
+  }
+
+  // 예산 카테고리 드롭다운 항목
+  // 수정하는 거래의 출처가 이미 삭제된 카테고리면 목록에 없음 → Dropdown은 value가 items에 없으면 크래시하므로
+  // 거래에 저장된 이름으로 항목을 하나 더 만들어 줌 (서버는 출처를 안 바꾸면 삭제된 카테고리도 유지)
+  List<DropdownMenuItem<int>> _budgetCategoryItems() {
+    final items = budgetCategories
+        .where((c) => c.name != '저축')
+        .map<DropdownMenuItem<int>>((c) {
+          return DropdownMenuItem<int>(
+            value: c.id,
+            child: Text(c.name, style: TextStyle(fontSize: 14)),
+          );
+        })
+        .toList();
+
+    final old = widget.transaction;
+    final exists = budgetCategories.any((c) => c.id == selectedBudgetCategoryId);
+    if (old != null && old.budgetCategoryId == selectedBudgetCategoryId && !exists) {
+      items.add(
+        DropdownMenuItem<int>(
+          value: old.budgetCategoryId,
+          child: Text('${old.budgetCategoryName} (삭제됨)', style: TextStyle(fontSize: 14)),
+        ),
+      );
+    }
+    return items;
   }
 
   @override
@@ -183,7 +221,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 if (widget.transaction != null) ...[
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('유형'),
-                    value: selectedTransactionType,
+                    initialValue: selectedTransactionType,
                     dropdownColor: Colors.white, // 목록 배경색
                     borderRadius: BorderRadius.circular(12), // 목록 모서리
                     items: transactionTypeList.map<DropdownMenuItem<String>>((
@@ -191,23 +229,18 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                     ) {
                       return DropdownMenuItem<String>(value: value, child: Text(value));
                     }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        selectedTransactionType = newValue!;
-                        selectedTransactionCategory = newValue == '수입'
-                            ? incomeCategoryList[0]
-                            : expenseCategoryList[0];
-                      });
-                    },
+                    // 서버가 유형 변경을 막음(400) → null이면 비활성화: 값은 보이지만 바꿀 수 없음
+                    onChanged: null,
                   ),
                   SizedBox(height: 20),
                 ],
 
-                // 카테고리 드롭다운 (저축이면 숨김)
-                if (selectedTransactionType != '저축') ...[
+                // 카테고리 드롭다운 (수입·지출만. 저축·투자는 서버가 유형 이름으로 채움)
+                if (selectedTransactionType == '수입' ||
+                    selectedTransactionType == '지출') ...[
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('카테고리'),
-                    value: selectedTransactionCategory,
+                    initialValue: selectedTransactionCategory,
                     dropdownColor: Colors.white, // 목록 배경색
                     borderRadius: BorderRadius.circular(12), // 목록 모서리
                     items: currentCategoryList.map<DropdownMenuItem<String>>((
@@ -227,27 +260,18 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                   SizedBox(height: 20),
                 ],
 
-                // 저축일 때 차감할 예산 선택
-                if (selectedTransactionType == '저축') ...[
-                  DropdownButtonFormField(
+                // 저축·투자일 때 차감할 예산 선택
+                if (selectedTransactionType == '저축' ||
+                    selectedTransactionType == '투자') ...[
+                  DropdownButtonFormField<int>(
                     decoration: inputDecoration('예산 출처'),
-                    value: selectedBudgetCategoryId.isEmpty
-                        ? null
-                        : selectedBudgetCategoryId,
+                    initialValue: selectedBudgetCategoryId,
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    items: budgetCategories
-                        .where((c) => c.name != '저축')
-                        .map<DropdownMenuItem<String>>((c) {
-                          return DropdownMenuItem<String>(
-                            value: c.id,
-                            child: Text(c.name, style: TextStyle(fontSize: 14)),
-                          );
-                        })
-                        .toList(),
-                    onChanged: (String? newValue) {
+                    items: _budgetCategoryItems(),
+                    onChanged: (int? newValue) {
                       setState(() {
-                        selectedBudgetCategoryId = newValue!;
+                        selectedBudgetCategoryId = newValue;
                       });
                     },
                   ),
@@ -256,25 +280,15 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
 
                 // 예산 카테고리 드롭다운 (지출일 때만 표시)
                 if (selectedTransactionType == '지출') ...[
-                  DropdownButtonFormField<String>(
+                  DropdownButtonFormField<int>(
                     decoration: inputDecoration('예산 카테고리'),
-                    value: selectedBudgetCategoryId.isEmpty
-                        ? null
-                        : selectedBudgetCategoryId,
+                    initialValue: selectedBudgetCategoryId,
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    items: budgetCategories
-                        .where((c) => c.name != '저축') // 저축 제외
-                        .map<DropdownMenuItem<String>>((c) {
-                          return DropdownMenuItem<String>(
-                            value: c.id,
-                            child: Text(c.name),
-                          );
-                        })
-                        .toList(),
-                    onChanged: (String? newValue) {
+                    items: _budgetCategoryItems(),
+                    onChanged: (int? newValue) {
                       setState(() {
-                        selectedBudgetCategoryId = newValue!;
+                        selectedBudgetCategoryId = newValue;
                       });
                     },
                   ),
@@ -318,82 +332,52 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                         : () async {
                             setState(() => isLoading = true);
                             try {
+                              final isSavingOrInvest =
+                                  selectedTransactionType == '저축' ||
+                                  selectedTransactionType == '투자';
                               final transaction = TransactionModel(
                                 // ?: null 허용, ??: null일 때 기본값
-                                id:
-                                    widget.transaction?.id ??
-                                    '', // 수정 모드면 기존 id, 추가 모드면 빈 문자열
-                                userId: FirebaseAuth.instance.currentUser!.uid,
+                                id: widget.transaction?.id ?? 0, // 수정 모드면 기존 id, 추가 모드면 0
                                 title: transactionName.text,
                                 amount: int.parse(transactionPrice.text),
                                 type: selectedTransactionType,
-                                category: selectedTransactionType == '저축'
-                                    ? '저축'
+                                // 저축·투자는 서버가 유형 이름으로 덮어씀 (여기서도 같은 값으로 보냄)
+                                category: isSavingOrInvest
+                                    ? selectedTransactionType
                                     : selectedTransactionCategory,
+                                // 수입은 출처 없음. 지출·저축·투자는 화면에서 고른 출처
                                 budgetCategoryId: selectedTransactionType == '수입'
                                     ? null
-                                    : selectedTransactionType == '저축'
-                                    ? budgetCategories
-                                          .firstWhere((c) => c.name == '저축')
-                                          .id
                                     : selectedBudgetCategoryId,
                                 date: selectedDate,
                                 memo: transactionMemo.text,
-                                createdAt: DateTime.now(),
                               );
 
-                              // Firestore에 저장 (추가 or 수정)
+                              // 서버에 저장 (추가 or 수정)
+                              // 수입이면 자동 저축·투자는 서버가 만듦 → Flutter는 거래 하나만 보냄
                               if (widget.transaction == null) {
-                                // 새 거래 추가 모드
                                 await _transactionService.addTransaction(transaction);
-
-                                // 수입이면 설정된 비율만큼 저축 자동 생성
-                                if (selectedTransactionType == '수입') {
-                                  final userBudget = await _budgetService.getUserBudget();
-                                  if (userBudget != null) {
-                                    final savingCategory = userBudget.categories
-                                        .firstWhere(
-                                          (c) => c['name'] == '저축',
-                                          orElse: () => {'ratio': 0},
-                                        );
-                                    final savingRatio = savingCategory['ratio'] as int;
-
-                                    if (savingRatio > 0) {
-                                      final savingAmount =
-                                          (int.parse(transactionPrice.text) *
-                                                  savingRatio /
-                                                  100)
-                                              .round();
-                                      final savingTransaction = TransactionModel(
-                                        id: '',
-                                        title: '자동 저축',
-                                        userId: FirebaseAuth.instance.currentUser!.uid,
-                                        amount: savingAmount,
-                                        type: '저축',
-                                        category: '저축',
-                                        budgetCategoryId: budgetCategories
-                                            .firstWhere((c) => c.name == '저축')
-                                            .id,
-                                        date: selectedDate,
-                                        memo: '수입의 $savingRatio 자동 저축',
-                                        createdAt: DateTime.now(),
-                                      );
-                                      await _transactionService.addTransaction(
-                                        savingTransaction,
-                                      );
-                                    }
-                                  }
-                                }
                               } else {
-                                // 기존 거래 수정 모드
                                 await _transactionService.updateTransaction(transaction);
                               }
+                              if (!context.mounted) return;
                               Navigator.popUntil(context, (route) => route.isFirst);
-                            } catch (e) {
+                            } on DioException catch (e) {
+                              // 서버 검증 실패(400: 금액·거래명·출처 등), 서버 꺼짐
+                              if (!context.mounted) return;
+                              final message =
+                                  apiErrorMessage(e, '저장에 실패했어요.');
                               ScaffoldMessenger.of(
                                 context,
-                              ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
-                              if (mounted) setState(() => isLoading = false);
+                              ).showSnackBar(SnackBar(content: Text(message)));
+                              setState(() => isLoading = false);
+                            } on FormatException {
+                              // 금액 칸이 비었거나 숫자가 아님 (int.parse 실패)
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text('금액을 숫자로 입력해주세요.')));
+                              setState(() => isLoading = false);
                             }
                           },
                     child: isLoading

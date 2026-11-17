@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/screens/auth/signup_screen.dart';
 import 'package:moa/screens/shell_screen.dart';
 import 'package:moa/services/auth_service.dart';
@@ -78,9 +79,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         } catch (e) {
                           setState(() => isLoading = false);
+                          // 비밀번호 틀림(401) → 서버 메시지, 서버 꺼짐 → 연결 안내
+                          final message = apiErrorMessage(e, '이메일 또는 비밀번호를 확인해주세요.');
                           ScaffoldMessenger.of(
                             context,
-                          ).showSnackBar(SnackBar(content: Text('이메일 또는 비밀번호를 확인해주세요.')));
+                          ).showSnackBar(SnackBar(content: Text(message)));
                         }
                       },
                 child: Text('로그인'),

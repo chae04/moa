@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
 import 'package:moa/services/auth_service.dart';
@@ -169,15 +170,24 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
 
                             setState(() => isLoading = true);
                             try {
-                              // 회원가입 처리 (여기서 실행)
+                              // 회원가입 + 기본 카테고리 + 비율을 서버에 한 번에 저장
                               await _authService.signUp(
                                 email: widget.email,
                                 password: widget.password,
-                                budgetCategories: categories,
-                                includeInDaily: includeInDaily,
                                 savingRatio: savingRatio,
                                 investRatio: investRatio,
+                                categories: categories
+                                    .map(
+                                      (c) => <String, dynamic>{
+                                        'name': c['name'],
+                                        // 체크 상태는 categories가 아니라 includeInDaily 맵에 저장되어 있음
+                                        'includeInDaily': includeInDaily[c['name']] ?? false,
+                                        'ratio': c['ratio'],
+                                      },
+                                    )
+                                    .toList(),
                               );
+
 
                               if (mounted) {
                                 Navigator.pushAndRemoveUntil(
@@ -187,9 +197,13 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
                                 );
                               }
                             } catch (e) {
+                              // 서버가 보낸 {"message": "..."} 를 그대로 표시 (예: "이미 사용 중인 이메일입니다.")
+                              final message =
+                                  apiErrorMessage(e, '회원가입에 실패했어요.');
+
                               ScaffoldMessenger.of(
                                 context,
-                              ).showSnackBar(SnackBar(content: Text('회원가입 실패: $e')));
+                              ).showSnackBar(SnackBar(content: Text(message)));
                               if (mounted) setState(() => isLoading = false);
                             }
                           },

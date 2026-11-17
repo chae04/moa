@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
+import 'package:moa/models/home_model.dart';
 import 'package:moa/screens/transaction/transaction_type_screen.dart';
-import 'package:moa/services/transaction_service.dart';
+import 'package:moa/services/home_service.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:moa/services/budget_service.dart';
-import 'package:moa/constants/categories.dart';
-import 'package:moa/services/budget_category_service.dart';
-import 'package:moa/models/budget_category_model.dart';
 
 class HomeScreen extends StatefulWidget {
   final DateTime focusedDay;
@@ -27,18 +25,14 @@ class _HomeScreenState extends State<HomeScreen> {
   int totalIncome = 0; // 총 수입
   int totalExpense = 0; // 총 지출
   int totalSaving = 0; // 총 저축
+  int totalInvest = 0; // 총 투자
 
-  final TransactionService _transactionService = TransactionService();
-  final BudgetService _budgetService = BudgetService();
+  final HomeService _homeService = HomeService(); // 홈 데이터는 서버가 한 번에 계산해서 줌
   late DateTime _focusedDay; // 현재 선택된 날짜
-  final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
-  List<BudgetCategoryModel> budgetCategories = [];
-  int dailyBudget = 0; // 일일 예산 추천
+  List<CategorySummary> budgetCategories = []; // 홈에 표시할 카테고리 (예산·사용액·잔액 포함)
+  int? dailyBudget; // 일일 예산 추천 (지난달이거나 비율이 없으면 null)
 
-  Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계
-  Map<String, int> expenseByCategory = initialExpenseByCategory;
-  Map<String, int> usedByBudgetCategory = {};
-  Map<String, int> budgetByCategory = {};
+  Map<DateTime, int> dailyExpense = {}; // 날짜별 지출 합계 (달력 표시용)
 
   @override
   void initState() {
@@ -61,114 +55,69 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadData({int? year, int? month}) async {
     final y = year ?? _focusedDay.year;
     final m = month ?? _focusedDay.month;
-    final cats = await _budgetCategoryService.getCategories();
 
-    final monthStr = '$y-${m.toString().padLeft(2, '0')}';
+    try {
+      // 합계·카테고리별 예산·날짜별 지출·일일 예산을 서버가 계산해서 한 번에 줌
+      final home = await _homeService.getHome(y, m);
 
-    final transactions = await _transactionService.getMonthlyTransactions(y, m);
-    final userBudget = await _budgetService.getUserBudget();
+      // 응답을 기다리는 동안 화면을 벗어났거나 다른 달로 넘겼으면 버림
+      // (달을 빠르게 넘기면 이전 달 응답이 늦게 와서 현재 달 화면을 덮어쓰는 문제 방지)
+      if (!mounted || _focusedDay.year != y || _focusedDay.month != m) return;
 
-    final income = transactions
-        .where((t) => t.type == '수입')
-        .fold(0, (sum, t) => sum + t.amount);
-
-    Map<DateTime, int> tempDaily = {};
-    for (var t in transactions) {
-      if (t.type == '지출') {
-        final day = DateTime(t.date.year, t.date.month, t.date.day);
-        tempDaily[day] = (tempDaily[day] ?? 0) + t.amount;
-      }
-    }
-
-    // ID 기준으로 초기화
-    Map<String, int> tempUsed = {for (var c in budgetCategories) c.id: 0};
-    Map<String, int> tempBudget = {for (var c in budgetCategories) c.id: 0};
-
-    setState(() {
-      budgetCategories = cats.where((c) => c.showOnHome).toList();
-      dailyExpense = tempDaily;
-      totalIncome = income;
-      totalExpense = transactions
-          .where((t) => t.type == '지출')
-          .fold(0, (sum, t) => sum + t.amount);
-      totalSaving = transactions
-          .where((t) => t.type == '저축')
-          .fold(0, (sum, t) => sum + t.amount);
-
-      // usedByBudgetCategory - ID 기준
-      for (var t in transactions) {
-        if (t.budgetCategoryId != null) {
-          tempUsed[t.budgetCategoryId!] = (tempUsed[t.budgetCategoryId!] ?? 0) + t.amount;
-        }
-      }
-      usedByBudgetCategory = tempUsed;
-    });
-
-    // 예산 불러오기
-    final budget = await _budgetService.getBudget(monthStr);
-    final budgetData = budget ?? userBudget;
-    print('budget: $budget');
-    print('userBudget: $userBudget');
-    if (budgetData != null) {
       setState(() {
-        for (var c in budgetData.categories) {
-          final categoryId = c['categoryId'] as String?;
-          if (categoryId != null) {
-            tempBudget[categoryId] = (income * (c['ratio'] as int) / 100).round();
-          }
-        }
-        budgetByCategory = tempBudget;
+        totalIncome = home.totalIncome;
+        totalExpense = home.totalExpense;
+        totalSaving = home.totalSaving;
+        totalInvest = home.totalInvest;
+        // 삭제됐거나 홈 표시를 끈 카테고리는 바를 그리지 않음 (서버 목록에는 들어 있음)
+        budgetCategories = home.categories.where((c) => c.showOnHome && !c.deleted).toList();
+        dailyBudget = home.dailyBudget;
+        // 달력은 날짜로 금액을 찾으므로 목록 → Map<날짜, 금액>으로 변환
+        dailyExpense = {for (var d in home.dailyExpenses) d.date: d.amount};
       });
-    }
-
-    // dailyBudget 계산
-    if (userBudget != null) {
-      int totalRemaining = 0;
-      for (var c in userBudget.categories) {
-        final categoryId = c['categoryId'] as String?;
-        if (categoryId != null && c['includeInDaily'] == true) {
-          final b = budgetByCategory[categoryId] ?? 0;
-          final used = usedByBudgetCategory[categoryId] ?? 0;
-          totalRemaining += (b - used);
-        }
-      }
-      final now = DateTime.now();
-      final lastDay = DateTime(now.year, now.month + 1, 0);
-      final remainingDays = lastDay.day - now.day + 1;
-      setState(() {
-        dailyBudget = remainingDays > 0 ? (totalRemaining / remainingDays).round() : 0;
-      });
+    } catch (e) {
+      // 서버 꺼짐, 토큰 문제 등: 이전 화면 값은 그대로 두고 알림만
+      if (!mounted) return;
+      final message = apiErrorMessage(e, '홈 정보를 불러오지 못했어요.');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
-  // 수입/지출/저축 카드 형태로 표시
-  Widget _buildSummaryCard(String label, int amount, Color color) {
-    return Container(
-      padding: EdgeInsets.all(3),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        // mainAxisAlignment: MainAxisAlignment.spaceAround,
+  // 수입/지출/저축/투자를 한 줄에 하나씩 표시 (왼쪽 이름, 오른쪽 금액)
+  // 가로 4칸이면 금액이 커질 때 두 줄로 깨져서 세로 배치로 바꿈
+  // color: 이름 글자색 (수입 파랑, 지출 빨강, 저축·투자 초록). 금액은 검정
+  Widget _buildSummaryRow(String label, int amount, Color color) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2),
+      child: Row(
         children: [
           Text(label, style: TextStyle(color: color, fontSize: 12)),
-          SizedBox(width: 20),
-          Text(
-            '${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          SizedBox(width: 10), // 이름과 금액 사이 간격
+          Expanded(
+            child: Text(
+              '${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+              textAlign: TextAlign.right, // 금액 끝을 맞춰서 자릿수 비교가 쉬움
+              maxLines: 1, // 두 줄로 넘어가지 않게
+              overflow: TextOverflow.ellipsis, // 그래도 넘치면 ...으로
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.black,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProgressBar(String categoryId, String categoryName) {
-    final budget = budgetByCategory[categoryId] ?? 0;
-    final used = usedByBudgetCategory[categoryId] ?? 0;
-    final balance = budget - used;
-    print('$categoryName - budget: $budget, used: $used');
+  Widget _buildProgressBar(CategorySummary category) {
+    final budget = category.budget; // 수입 × 비율 (서버 계산)
+    final balance = category.remaining; // 예산 - 사용액 (서버 계산, 음수면 초과)
 
     return Row(
       children: [
-        SizedBox(width: 50, child: Text(categoryName, style: TextStyle(fontSize: 12))),
+        SizedBox(width: 50, child: Text(category.name, style: TextStyle(fontSize: 12))),
         SizedBox(
           width: 90,
           child: Text(
@@ -245,13 +194,27 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(height: 30),
 
-            // 수입, 지출, 저축 금액 카드
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // 수입, 지출, 저축, 투자 금액 (2행 2열: 원래 카드와 같은 두 줄 높이라 달력 크기 유지)
+            Column(
               children: [
-                Expanded(child: _buildSummaryCard('수입', totalIncome, Colors.blue)),
-                Expanded(child: _buildSummaryCard('지출', totalExpense, Colors.red)),
-                Expanded(child: _buildSummaryCard('저축', totalSaving, Colors.green)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildSummaryRow('수입', totalIncome, Colors.blue),
+                    ),
+                    SizedBox(width: 24), // 두 열 사이 간격
+                    Expanded(
+                      child: _buildSummaryRow('지출', totalExpense, Colors.red),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(child: _buildSummaryRow('저축', totalSaving, Colors.green)),
+                    SizedBox(width: 24),
+                    Expanded(child: _buildSummaryRow('투자', totalInvest, Colors.green)),
+                  ],
+                ),
               ],
             ),
             SizedBox(height: 30),
@@ -389,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: budgetCategories.map((category) {
                 return Column(
                   children: [
-                    _buildProgressBar(category.id, category.name),
+                    _buildProgressBar(category),
                     SizedBox(height: 10),
                   ],
                 );
@@ -404,7 +367,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text('일일 추천 예산', style: TextStyle(fontSize: 13, color: Colors.grey)),
                 Text(
-                  '${dailyBudget.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+                  // null(지난달·비율 없음)이면 0원 대신 '-' (0원은 "오늘 쓸 돈 없음"으로 오해할 수 있음)
+                  dailyBudget == null
+                      ? '-'
+                      : '${dailyBudget.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,

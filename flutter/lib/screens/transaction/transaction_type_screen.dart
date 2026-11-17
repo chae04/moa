@@ -24,6 +24,8 @@ class TransactionTypeScreen extends StatelessWidget {
                 _buildTypeButton(context, '지출', Colors.red),
                 SizedBox(height: 16),
                 _buildTypeButton(context, '저축', Colors.green),
+                SizedBox(height: 16),
+                _buildTypeButton(context, '투자', Colors.green),
               ],
             ),
             SizedBox(
@@ -55,12 +57,12 @@ class TransactionTypeScreen extends StatelessWidget {
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: color.withOpacity(0.1),
+          backgroundColor: color.withValues(alpha: 0.1),
           foregroundColor: color,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: color.withOpacity(0.3)),
+            side: BorderSide(color: color.withValues(alpha: 0.3)),
           ),
         ),
         child: Text(type, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

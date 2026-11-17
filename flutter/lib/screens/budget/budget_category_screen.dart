@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
 import 'package:moa/models/budget_category_model.dart';
@@ -24,11 +25,19 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
   }
 
   Future<void> _loadCategories() async {
-    final cats = await _budgetCategoryService.getCategories();
-    setState(() {
-      categories = cats;
-      isLoading = false;
-    });
+    try {
+      final cats = await _budgetCategoryService.getCategories();
+      if (!mounted) return;
+      setState(() => categories = cats);
+    } catch (e) {
+      // 서버 꺼짐 등: 목록은 이전 값 유지, 알림만
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(apiErrorMessage(e, '카테고리를 불러오지 못했어요.'))),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false); // 실패해도 무한 로딩 방지
+    }
   }
 
   // 카테고리 추가/수정 다이얼로그
@@ -101,20 +110,25 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                   return;
                 }
 
-                if (isEdit) {
-                  category.name = controller.text;
-                  category.showOnHome = showOnHome;
-                  await _budgetCategoryService.updateCategory(category);
-                } else {
-                  final newCategory = BudgetCategoryModel(
-                    id: '',
-                    userId: '',
-                    name: controller.text,
-                    order: categories.length,
-                    includeInDaily: false,
-                    showOnHome: showOnHome,
+                try {
+                  if (isEdit) {
+                    category.name = controller.text;
+                    category.showOnHome = showOnHome;
+                    await _budgetCategoryService.updateCategory(category);
+                  } else {
+                    await _budgetCategoryService.addCategory(
+                      name: controller.text,
+                      showOnHome: showOnHome,
+                    );
+                  }
+                } catch (e) {
+                  // 서버 검증 실패(이름 10자 초과, 홈 5개 초과 등): 다이얼로그는 열어 둔 채 메시지만
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(apiErrorMessage(e, '저장에 실패했어요.'))),
                   );
-                  await _budgetCategoryService.addCategory(newCategory);
+                  await _loadCategories(); // 수정 모드에서 미리 바꾼 이름·홈 표시를 서버 값으로 되돌림
+                  return;
                 }
 
                 // 카테고리 추가하면 예산 비율 설정 폼으로 안내
@@ -231,8 +245,17 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                                   return;
                                 }
                                 category.showOnHome = !category.showOnHome;
-                                await _budgetCategoryService.updateCategory(category);
-                                _loadCategories();
+                                try {
+                                  await _budgetCategoryService.updateCategory(category);
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(apiErrorMessage(e, '홈 표시를 바꾸지 못했어요.')),
+                                    ),
+                                  );
+                                }
+                                _loadCategories(); // 성공이면 새 값, 실패면 원래 값으로 다시 그림
                               },
                               child: Icon(
                                 Icons.label,

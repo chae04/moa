@@ -1,8 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/transaction_model.dart';
-import 'package:moa/services/budget_category_service.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final TransactionModel transaction;
@@ -18,12 +16,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   late int transactionPrice;
   late String transactionType;
   late String transactionCategory;
-  late String? budgetCategoryId;
+  late int? budgetCategoryId;
   late String date;
   late String memo;
-
-  List<BudgetCategoryModel> budgetCategories = [];
-  final BudgetCategoryService _budgetCategoryService = BudgetCategoryService(); // 수정
 
   @override
   void initState() {
@@ -35,43 +30,28 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     budgetCategoryId = widget.transaction.budgetCategoryId;
     date = DateFormat('yyyy.MM.dd').format(widget.transaction.date);
     memo = widget.transaction.memo ?? '';
-    _loadCategories();
   }
 
-  Future<void> _loadCategories() async {
-    final cats = await _budgetCategoryService.getCategories();
-    setState(() {
-      budgetCategories = cats;
-    });
-  }
-
-  // budgetCategory 이름 찾기
-  String get budgetCategoryName {
-    if (budgetCategoryId == null) return '';
-    final cat = budgetCategories.firstWhere(
-      (c) => c.id == budgetCategoryId,
-      orElse: () => BudgetCategoryModel(
-        id: '',
-        userId: '',
-        name: '삭제된 카테고리',
-        order: 0,
-        includeInDaily: false,
-        showOnHome: false,
-      ),
-    );
-    return cat.name;
-  }
+  // budgetCategory 이름: 서버 응답에 들어 있음 (삭제된 카테고리여도 원래 이름이 옴)
+  // → 카테고리 목록을 따로 불러와 id로 찾을 필요가 없어짐
+  String get budgetCategoryName => widget.transaction.budgetCategoryName ?? '';
 
   @override
   Widget build(BuildContext context) {
     final isIncome = transactionType == '수입';
     final isSaving = transactionType == '저축';
+    final isInvest = transactionType == '투자';
     final amountColor = isIncome
         ? Colors.blue
-        : isSaving
+        : isSaving || isInvest
         ? Colors.green
         : Colors.red;
-    final amountPrefix = isIncome ? '+' : '-';
+    // 수입 +, 지출 -, 저축·투자는 부호 없음 (목록 화면과 같은 규칙)
+    final amountPrefix = isIncome
+        ? '+'
+        : isSaving || isInvest
+        ? ''
+        : '-';
 
     return Scaffold(
       body: Padding(
@@ -126,6 +106,12 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   // 유형
                   _buildDetailRow('유형', transactionType),
                   SizedBox(height: 12),
+
+                  // 자동 거래 표시 (수입을 입력하면 서버가 비율대로 만든 저축·투자)
+                  if (widget.transaction.isAuto) ...[
+                    _buildDetailRow('구분', '수입에서 자동 생성'),
+                    SizedBox(height: 12),
+                  ],
 
                   // 예산 카테고리 (수입이 아닐 때만)
                   if (budgetCategoryId != null)

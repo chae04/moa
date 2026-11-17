@@ -23,7 +23,7 @@ const List<String> budgetCategoryExcludeSaving = ['생활비', '자유비', '교
 const List<String> dailyBudgetDefault = ['생활비', '자유비', '교통비'];
 
 // 거래 유형
-const List<String> transactionTypeList = ['수입', '지출', '저축'];
+const List<String> transactionTypeList = ['수입', '지출', '저축', '투자'];
 
 // 카테고리별 지출 초기값 : 0
 Map<String, int> get initialExpenseByCategory => {

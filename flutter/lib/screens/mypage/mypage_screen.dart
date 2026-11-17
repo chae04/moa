@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/services/auth_service.dart';
 import 'package:moa/screens/auth/login_screen.dart';
 import 'package:moa/screens/budget/budget_form_screen.dart';
 import 'package:moa/screens/budget/budget_category_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:moa/services/user_service.dart';
+import 'package:dio/dio.dart';
 
 class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
@@ -15,11 +17,26 @@ class MypageScreen extends StatefulWidget {
 
 class _MypageScreenState extends State<MypageScreen> {
   final AuthService _authService = AuthService();
+  final UserService _userService = UserService(); // 내 정보 조회용
   bool isDeleting = false;
+  String email = ''; // 서버에서 받아 오기 전에는 빈 문자열
 
   @override
   void initState() {
     super.initState();
+    _loadEmail(); // 화면이 처음 만들어질 때 한 번 서버에서 이메일 가져오기
+  }
+
+  // 서버에서 내 이메일 가져오기
+  Future<void> _loadEmail() async {
+    try {
+      final result = await _userService.getMyEmail();
+      if (!mounted) return; // 요청하는 동안 화면을 벗어났으면 setState 하지 않음
+      setState(() => email = result); // 받은 이메일을 화면에 반영
+    } on DioException catch (e) {
+      // 실패해도 마이페이지는 쓸 수 있게 이메일만 비워 둠 (토큰 만료 처리는 TODO 92)
+      print('이메일 조회 실패: ${e.response?.statusCode}');
+    }
   }
 
   Widget _buildMenuItem({
@@ -67,12 +84,12 @@ class _MypageScreenState extends State<MypageScreen> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: primaryColor.withOpacity(0.2),
+                        backgroundColor: primaryColor.withValues(alpha: 0.2),
                         child: Icon(Icons.person, color: primaryColor),
                       ),
                       SizedBox(width: 12),
                       Text(
-                        FirebaseAuth.instance.currentUser?.email ?? '',
+                        email, // 서버에서 받아 온 이메일
                         style: TextStyle(fontSize: 14),
                       ),
                     ],
@@ -165,79 +182,31 @@ class _MypageScreenState extends State<MypageScreen> {
 
                         final password = await showDialog<String>(
                           context: context,
-                          builder: (context) => StatefulBuilder(
-                            builder: (context, setDialogState) {
-                              String? errorText;
-                              bool isVerifying = false;
-
-                              return StatefulBuilder(
-                                builder: (context, setDialogState) {
-                                  return AlertDialog(
-                                    backgroundColor: Colors.white,
-                                    title: Text('비밀번호 확인'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        TextField(
-                                          controller: passwordController,
-                                          decoration: InputDecoration(
-                                            labelText: '비밀번호',
-                                            errorText: errorText,
-                                          ),
-                                          obscureText: true,
-                                          autofocus: true,
-                                        ),
-                                      ],
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: Text('취소'),
-                                      ),
-                                      TextButton(
-                                        onPressed: isVerifying
-                                            ? null
-                                            : () async {
-                                                if (passwordController.text.isEmpty) {
-                                                  return;
-                                                }
-                                                setDialogState(() {
-                                                  isVerifying = true;
-                                                  errorText = null;
-                                                });
-                                                try {
-                                                  await _authService.reauthenticate(
-                                                    passwordController.text,
-                                                  );
-                                                  Navigator.pop(
-                                                    context,
-                                                    passwordController.text,
-                                                  );
-                                                } catch (e) {
-                                                  setDialogState(() {
-                                                    isVerifying = false;
-                                                    errorText = '비밀번호가 틀렸습니다.';
-                                                  });
-                                                }
-                                              },
-                                        child: isVerifying
-                                            ? SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
-                                              )
-                                            : Text(
-                                                '확인',
-                                                style: TextStyle(color: primaryColor),
-                                              ),
-                                      ),
-                                    ],
-                                  );
+                          builder: (context) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            title: Text('비밀번호 확인'),
+                            content: TextField(
+                              controller: passwordController,
+                              decoration: InputDecoration(labelText: '비밀번호'),
+                              obscureText: true,
+                              autofocus: true,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text('취소'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  if (passwordController.text.isEmpty) {
+                                    return;
+                                  }
+                                  // 비밀번호 확인은 서버가 탈퇴 요청에서 처리
+                                  Navigator.pop(context, passwordController.text);
                                 },
-                              );
-                            },
+                                child: Text('확인', style: TextStyle(color: primaryColor)),
+                              ),
+                            ],
                           ),
                         );
 
@@ -257,11 +226,8 @@ class _MypageScreenState extends State<MypageScreen> {
                             );
                           }
                         } catch (e) {
-                          String message = '탈퇴 실패';
-                          if (e.toString().contains('wrong-password') ||
-                              e.toString().contains('invalid-credential')) {
-                            message = '비밀번호가 틀렸습니다.';
-                          }
+                          // 서버가 보낸 {"message": "..."} 를 그대로 표시 (예: "비밀번호가 올바르지 않습니다.")
+                          final message = apiErrorMessage(e, '탈퇴 실패');
                           ScaffoldMessenger.of(
                             context,
                           ).showSnackBar(SnackBar(content: Text(message)));
@@ -283,7 +249,7 @@ class _MypageScreenState extends State<MypageScreen> {
           // 로딩 오버레이
           if (isDeleting)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: Center(child: CircularProgressIndicator(color: Colors.white)),
             ),
         ],

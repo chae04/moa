@@ -1,4 +1,6 @@
+import 'package:moa/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/screens/auth/signup_budget_screen.dart';
 
 // StatefulWidget: 상태(데이터)가 변하는 화면에서 사용
@@ -15,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final passwordCheckController = TextEditingController();
+  final AuthService _authService = AuthService(); // 이메일 중복 확인용
   bool isLoading = false;
 
   @override
@@ -95,6 +98,32 @@ class _SignupScreenState extends State<SignupScreen> {
                             return;
                           }
                           print('validation 통과');
+
+                          // 이메일 중복 확인 (서버) - 비밀번호 검사가 끝난 뒤에 한 번만 요청
+                          setState(() => isLoading = true); // 버튼 스피너 표시 + 중복 클릭 방지
+                          try {
+                            final available = await _authService.checkEmail(
+                              emailController.text,
+                            );
+                            if (!available) {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text('이미 사용 중인 이메일입니다.')));
+                              return; // 예산 비율 화면으로 넘어가지 않음
+                            }
+                          } catch (e) {
+                            // 서버 꺼짐, 파라미터 누락(400) 등
+                            final message =
+                                apiErrorMessage(e, '이메일 확인에 실패했어요.');
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(message)));
+                            return;
+                          } finally {
+                            if (mounted) {
+                              setState(() => isLoading = false); // 성공/실패/return 모두 스피너 끄기
+                            }
+                          }
 
                           if (mounted) {
                             Navigator.push(

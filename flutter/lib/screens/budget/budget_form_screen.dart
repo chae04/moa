@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/budget_model.dart';
 import 'package:moa/services/budget_category_service.dart';
 import 'package:moa/services/budget_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:moa/constants/styles.dart';
 
 class BudgetFormScreen extends StatefulWidget {
-  final String? deleteCategoryId; // 삭제할 카테고리 ID
+  final int? deleteCategoryId; // 삭제할 카테고리 ID
   BudgetFormScreen({super.key, this.deleteCategoryId});
   @override
   State<BudgetFormScreen> createState() => _BudgetScreenState();
@@ -17,12 +17,12 @@ class BudgetFormScreen extends StatefulWidget {
 class _BudgetScreenState extends State<BudgetFormScreen> {
   final BudgetService _budgetService = BudgetService();
   final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
-  Map<String, bool> showOnHome = {};
+  Map<int, bool> showOnHome = {};
 
   List<BudgetCategoryModel> categories = [];
-  Map<String, int> budgetRatios = {};
-  Map<String, bool> includeInDaily = {};
-  Map<String, TextEditingController> controllers = {};
+  Map<int, int> budgetRatios = {};
+  Map<int, bool> includeInDaily = {};
+  Map<int, TextEditingController> controllers = {};
   final savingRatioController = TextEditingController();
   final investRatioController = TextEditingController();
   int savingRatio = 0;
@@ -54,35 +54,42 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
   }
 
   Future<void> _loadCategories() async {
-    final cats = await _budgetCategoryService.getCategories();
-    final userBudget = await _budgetService.getUserBudget();
+    try {
+      final cats = await _budgetCategoryService.getCategories();
+      // 선택한 월(처음엔 이번 달)에 적용되는 비율 묶음. 저장한 적이 없으면 applyFrom == null
+      final budget = await _budgetService.getRatios(selectedMonth);
+      if (!mounted) return; // 요청하는 동안 화면을 벗어났으면 setState 하지 않음
 
-    setState(() {
-      categories = cats;
-      for (var c in cats) {
-        budgetRatios[c.id] = 0;
-        includeInDaily[c.id] = c.includeInDaily;
-        controllers[c.id] = TextEditingController();
-        showOnHome[c.id] = c.showOnHome;
-      }
+      setState(() {
+        categories = cats;
+        for (var c in cats) {
+          budgetRatios[c.id] = 0;
+          includeInDaily[c.id] = c.includeInDaily; // 일일 포함은 카테고리에 저장된 값
+          controllers[c.id] = TextEditingController();
+          showOnHome[c.id] = c.showOnHome;
+        }
 
-      // 기존 비율 채우기
-      if (userBudget != null) {
-        savingRatio = userBudget.savingRatio;
-        investRatio = userBudget.investRatio;
-        savingRatioController.text = userBudget.savingRatio.toString();
-        investRatioController.text = userBudget.investRatio.toString();
-        for (var c in userBudget.categories) {
-          final categoryId = c['categoryId'] as String?;
-          if (categoryId != null) {
-            budgetRatios[categoryId] = c['ratio'] ?? 0;
-            controllers[categoryId]?.text = (c['ratio'] ?? 0).toString();
-            includeInDaily[categoryId] = c['includeInDaily'] ?? false;
+        // 기존 비율 채우기
+        if (budget.applyFrom != null) {
+          savingRatio = budget.savingRatio;
+          investRatio = budget.investRatio;
+          savingRatioController.text = budget.savingRatio.toString();
+          investRatioController.text = budget.investRatio.toString();
+          for (var c in budget.categories) {
+            // 비율 묶음에는 있지만 이미 삭제된 카테고리는 controllers에 없음 → 화면에 안 나오므로 건너뜀
+            if (!controllers.containsKey(c.categoryId)) continue;
+            budgetRatios[c.categoryId] = c.ratio;
+            controllers[c.categoryId]!.text = c.ratio.toString();
           }
         }
-      }
-      isLoading = false;
-    });
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final message = apiErrorMessage(e, '예산 비율을 불러오지 못했어요.');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => isLoading = false); // 성공/실패 모두 스피너 끄기
+    }
   }
 
   @override
@@ -117,11 +124,15 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                             child: Text(value),
                           );
                         }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedMonth = newValue!;
-                          });
-                        },
+                        // 카테고리 삭제 흐름에서는 이번 달로 고정 (onChanged가 null이면 드롭다운 비활성화)
+                        // 다음 달부터로 저장하면 이번 달 비율에 그 카테고리가 남아서 서버가 삭제를 400으로 막음
+                        onChanged: widget.deleteCategoryId != null
+                            ? null
+                            : (String? newValue) {
+                                setState(() {
+                                  selectedMonth = newValue!;
+                                });
+                              },
                       ),
                     ),
                   ),
@@ -309,47 +320,58 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                               return;
                             }
 
-                            // categories 배열로 변환
-                            final List<Map<String, dynamic>> cats =
-                                visibleCategories // 삭제 예정 카테고리 제외
-                                    .map((c) {
-                                      return <String, dynamic>{
-                                        'categoryId': c.id,
-                                        'name': c.name,
-                                        'ratio': budgetRatios[c.id] ?? 0,
-                                        'amount': 0,
-                                        'includeInDaily': includeInDaily[c.id] ?? false,
-                                      };
-                                    })
-                                    .toList();
-
-                            // BudgetModel 생성
+                            // BudgetModel 생성 (서버 BudgetRatioRequest 모양)
                             final budget = BudgetModel(
-                              userId: FirebaseAuth.instance.currentUser!.uid,
-                              month: selectedMonth,
-                              categories: cats, // cats 사용
+                              applyFrom: selectedMonth, // 이 월부터 적용
                               savingRatio: savingRatio,
                               investRatio: investRatio,
+                              categories:
+                                  visibleCategories // 삭제 예정 카테고리 제외
+                                      .map(
+                                        (c) => CategoryRatio(
+                                          categoryId: c.id,
+                                          name: c.name, // toJson에서는 빠짐
+                                          ratio: budgetRatios[c.id] ?? 0,
+                                        ),
+                                      )
+                                      .toList(),
                             );
 
-                            // BudgetModel 저장
-                            await _budgetService.setBudget(budget);
-                            await _budgetService.setUserBudget(budget);
+                            try {
+                              // 비율 저장 (합계 100, 지난 달 여부는 서버가 다시 검증)
+                              await _budgetService.saveRatios(budget);
 
-                            if (widget.deleteCategoryId != null) {
-                              await _budgetCategoryService.deleteCategory(
-                                widget.deleteCategoryId!,
-                              );
+                              // 비율을 먼저 저장해야 삭제 가능: 이번 달 비율에 남아 있으면 서버가 삭제를 막음
+                              if (widget.deleteCategoryId != null) {
+                                await _budgetCategoryService.deleteCategory(
+                                  widget.deleteCategoryId!,
+                                );
+                              }
+
+                              // showOnHome, includeInDaily 업데이트
+                              // - visibleCategories: 방금 삭제한 카테고리는 서버에서 404가 나므로 제외
+                              // - 정렬: 홈 표시를 끄는 카테고리를 먼저 보내야 서버의 "홈 최대 5개" 검사에 걸리지 않음
+                              final toUpdate = [...visibleCategories]
+                                ..sort(
+                                  (a, b) => ((showOnHome[a.id] ?? false) ? 1 : 0)
+                                      .compareTo((showOnHome[b.id] ?? false) ? 1 : 0),
+                                );
+                              for (var c in toUpdate) {
+                                c.showOnHome = showOnHome[c.id] ?? false;
+                                c.includeInDaily = includeInDaily[c.id] ?? false;
+                                await _budgetCategoryService.updateCategory(c);
+                              }
+                            } catch (e) {
+                              // 서버 검증 실패(400), 서버 꺼짐 등 → 화면을 닫지 않고 메시지만
+                              if (!context.mounted) return; // 아래에서 쓰는 context가 살아 있는지 검사
+                              final message = apiErrorMessage(e, '저장에 실패했어요.');
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text(message)));
+                              return;
                             }
 
-                            // showOnHome, includeInDaily 업데이트
-                            for (var c in categories) {
-                              c.showOnHome = showOnHome[c.id] ?? false;
-                              c.includeInDaily = includeInDaily[c.id] ?? false;
-                              await _budgetCategoryService.updateCategory(c);
-                            }
-
-                            if (mounted) {
+                            if (context.mounted) {
                               Navigator.pop(context);
                             }
                           },
