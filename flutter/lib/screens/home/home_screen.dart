@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/models/home_model.dart';
 import 'package:moa/screens/transaction/transaction_type_screen.dart';
@@ -75,10 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
         // 달력은 날짜로 금액을 찾으므로 목록 → Map<날짜, 금액>으로 변환
         dailyExpense = {for (var d in home.dailyExpenses) d.date: d.amount};
       });
-    } on DioException catch (e) {
+    } catch (e) {
       // 서버 꺼짐, 토큰 문제 등: 이전 화면 값은 그대로 두고 알림만
       if (!mounted) return;
-      final message = e.response?.data?['message'] ?? '홈 정보를 불러오지 못했어요.';
+      final message = apiErrorMessage(e, '홈 정보를 불러오지 못했어요.');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }

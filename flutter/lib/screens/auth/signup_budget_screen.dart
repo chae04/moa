@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
 import 'package:moa/services/auth_service.dart';
@@ -196,10 +196,10 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
                                   (route) => false,
                                 );
                               }
-                            } on DioException catch (e) {
+                            } catch (e) {
                               // 서버가 보낸 {"message": "..."} 를 그대로 표시 (예: "이미 사용 중인 이메일입니다.")
                               final message =
-                                  e.response?.data?['message'] ?? '회원가입에 실패했어요.';
+                                  apiErrorMessage(e, '회원가입에 실패했어요.');
 
                               ScaffoldMessenger.of(
                                 context,

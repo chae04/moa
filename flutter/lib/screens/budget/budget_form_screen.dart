@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/budget_model.dart';
@@ -83,9 +83,9 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
           }
         }
       });
-    } on DioException catch (e) {
+    } catch (e) {
       if (!mounted) return;
-      final message = e.response?.data?['message'] ?? '예산 비율을 불러오지 못했어요.';
+      final message = apiErrorMessage(e, '예산 비율을 불러오지 못했어요.');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => isLoading = false); // 성공/실패 모두 스피너 끄기
@@ -361,10 +361,10 @@ class _BudgetScreenState extends State<BudgetFormScreen> {
                                 c.includeInDaily = includeInDaily[c.id] ?? false;
                                 await _budgetCategoryService.updateCategory(c);
                               }
-                            } on DioException catch (e) {
+                            } catch (e) {
                               // 서버 검증 실패(400), 서버 꺼짐 등 → 화면을 닫지 않고 메시지만
                               if (!context.mounted) return; // 아래에서 쓰는 context가 살아 있는지 검사
-                              final message = e.response?.data?['message'] ?? '저장에 실패했어요.';
+                              final message = apiErrorMessage(e, '저장에 실패했어요.');
                               ScaffoldMessenger.of(
                                 context,
                               ).showSnackBar(SnackBar(content: Text(message)));

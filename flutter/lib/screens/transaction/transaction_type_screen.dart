@@ -57,12 +57,12 @@ class TransactionTypeScreen extends StatelessWidget {
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: color.withOpacity(0.1),
+          backgroundColor: color.withValues(alpha: 0.1),
           foregroundColor: color,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: color.withOpacity(0.3)),
+            side: BorderSide(color: color.withValues(alpha: 0.3)),
           ),
         ),
         child: Text(type, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

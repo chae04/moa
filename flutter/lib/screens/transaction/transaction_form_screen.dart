@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/services/budget_category_service.dart';
@@ -131,7 +132,18 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
   }
 
   Future<void> _loadBudgetCategories() async {
-    final cats = await _budgetCategoryService.getCategories();
+    final List<BudgetCategoryModel> cats;
+    try {
+      cats = await _budgetCategoryService.getCategories();
+    } catch (e) {
+      // 서버 꺼짐 등: 예산 카테고리 드롭다운만 비어 있게 두고 알림
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(apiErrorMessage(e, '예산 카테고리를 불러오지 못했어요.'))),
+      );
+      return;
+    }
+    if (!mounted) return;
     setState(() {
       budgetCategories = cats;
       // 수정 모드에서는 initState에서 기존 출처를 넣어 둠 → 비어 있을 때만 첫 번째로 채움
@@ -209,7 +221,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 if (widget.transaction != null) ...[
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('유형'),
-                    value: selectedTransactionType,
+                    initialValue: selectedTransactionType,
                     dropdownColor: Colors.white, // 목록 배경색
                     borderRadius: BorderRadius.circular(12), // 목록 모서리
                     items: transactionTypeList.map<DropdownMenuItem<String>>((
@@ -224,10 +236,11 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 ],
 
                 // 카테고리 드롭다운 (수입·지출만. 저축·투자는 서버가 유형 이름으로 채움)
-                if (selectedTransactionType == '수입' || selectedTransactionType == '지출') ...[
+                if (selectedTransactionType == '수입' ||
+                    selectedTransactionType == '지출') ...[
                   DropdownButtonFormField<String>(
                     decoration: inputDecoration('카테고리'),
-                    value: selectedTransactionCategory,
+                    initialValue: selectedTransactionCategory,
                     dropdownColor: Colors.white, // 목록 배경색
                     borderRadius: BorderRadius.circular(12), // 목록 모서리
                     items: currentCategoryList.map<DropdownMenuItem<String>>((
@@ -248,10 +261,11 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 ],
 
                 // 저축·투자일 때 차감할 예산 선택
-                if (selectedTransactionType == '저축' || selectedTransactionType == '투자') ...[
+                if (selectedTransactionType == '저축' ||
+                    selectedTransactionType == '투자') ...[
                   DropdownButtonFormField<int>(
                     decoration: inputDecoration('예산 출처'),
-                    value: selectedBudgetCategoryId,
+                    initialValue: selectedBudgetCategoryId,
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     items: _budgetCategoryItems(),
@@ -268,7 +282,7 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                 if (selectedTransactionType == '지출') ...[
                   DropdownButtonFormField<int>(
                     decoration: inputDecoration('예산 카테고리'),
-                    value: selectedBudgetCategoryId,
+                    initialValue: selectedBudgetCategoryId,
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     items: _budgetCategoryItems(),
@@ -351,7 +365,8 @@ class _TransactionScreenState extends State<TransactionFormScreen> {
                             } on DioException catch (e) {
                               // 서버 검증 실패(400: 금액·거래명·출처 등), 서버 꺼짐
                               if (!context.mounted) return;
-                              final message = e.response?.data?['message'] ?? '저장에 실패했어요.';
+                              final message =
+                                  apiErrorMessage(e, '저장에 실패했어요.');
                               ScaffoldMessenger.of(
                                 context,
                               ).showSnackBar(SnackBar(content: Text(message)));

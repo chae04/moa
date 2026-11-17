@@ -1,6 +1,6 @@
 import 'package:moa/services/auth_service.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/screens/auth/signup_budget_screen.dart';
 
 // StatefulWidget: 상태(데이터)가 변하는 화면에서 사용
@@ -111,17 +111,18 @@ class _SignupScreenState extends State<SignupScreen> {
                               ).showSnackBar(SnackBar(content: Text('이미 사용 중인 이메일입니다.')));
                               return; // 예산 비율 화면으로 넘어가지 않음
                             }
-                          } on DioException catch (e) {
+                          } catch (e) {
                             // 서버 꺼짐, 파라미터 누락(400) 등
                             final message =
-                                e.response?.data?['message'] ?? '이메일 확인에 실패했어요.';
+                                apiErrorMessage(e, '이메일 확인에 실패했어요.');
                             ScaffoldMessenger.of(
                               context,
                             ).showSnackBar(SnackBar(content: Text(message)));
                             return;
                           } finally {
-                            if (mounted)
+                            if (mounted) {
                               setState(() => isLoading = false); // 성공/실패/return 모두 스피너 끄기
+                            }
                           }
 
                           if (mounted) {

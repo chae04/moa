@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
 import 'package:moa/screens/transaction/transaction_type_screen.dart';
@@ -62,10 +62,21 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   Future<void> _loadTransactions() async {
-    final result = await _transactionService.getMonthlyTransactions(
-      selectedYear,
-      selectedMonth,
-    );
+    final List<TransactionModel> result;
+    try {
+      result = await _transactionService.getMonthlyTransactions(
+        selectedYear,
+        selectedMonth,
+      );
+    } catch (e) {
+      // 서버 꺼짐 등: 목록은 이전 값 유지, 로딩만 끄고 알림
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(apiErrorMessage(e, '거래 목록을 불러오지 못했어요.'))),
+      );
+      return;
+    }
 
     if (!mounted) return;
     setState(() {
@@ -127,8 +138,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         _loadTransactions();
                       },
                       borderRadius: BorderRadius.circular(12),
-                      splashColor: primaryColor.withOpacity(0.3),
-                      highlightColor: primaryColor.withOpacity(0.1),
+                      splashColor: primaryColor.withValues(alpha: 0.3),
+                      highlightColor: primaryColor.withValues(alpha: 0.1),
                       child: SizedBox(
                         height: 60,
                         child: Column(
@@ -248,39 +259,40 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
                                       // 수정 버튼 (자동 거래는 서버가 수정을 막으므로 숨김)
                                       if (!transaction.isAuto)
-                                      ListTile(
-                                        leading: Container(
-                                          padding: EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Icon(
-                                            Icons.edit,
-                                            color: Colors.blue,
-                                            size: 20,
-                                          ),
-                                        ),
-                                        title: Text('수정'),
-                                        onTap: () {
-                                          Navigator.pop(context);
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => TransactionFormScreen(
-                                                transaction: transaction,
-                                              ),
+                                        ListTile(
+                                          leading: Container(
+                                            padding: EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(8),
                                             ),
-                                          ).then((_) => _loadTransactions());
-                                        },
-                                      ),
+                                            child: Icon(
+                                              Icons.edit,
+                                              color: Colors.blue,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          title: Text('수정'),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    TransactionFormScreen(
+                                                      transaction: transaction,
+                                                    ),
+                                              ),
+                                            ).then((_) => _loadTransactions());
+                                          },
+                                        ),
 
                                       // 삭제 버튼
                                       ListTile(
                                         leading: Container(
                                           padding: EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: Colors.red.withOpacity(0.1),
+                                            color: Colors.red.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Icon(
@@ -332,12 +344,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                               await _transactionService.deleteTransaction(
                                                 transaction.id,
                                               );
-                                            } on DioException catch (e) {
+                                            } catch (e) {
                                               // 이미 지워진 거래(404), 서버 꺼짐 등
                                               if (!mounted) return;
                                               final message =
-                                                  e.response?.data?['message'] ?? '삭제에 실패했어요.';
-                                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                                  apiErrorMessage(e, '삭제에 실패했어요.');
+                                              ScaffoldMessenger.of(
+                                                this.context,
+                                              ).showSnackBar(
                                                 SnackBar(content: Text(message)),
                                               );
                                             }
@@ -383,7 +397,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                                 vertical: 2,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: Colors.green.withOpacity(0.1),
+                                                color: Colors.green.withValues(
+                                                  alpha: 0.1,
+                                                ),
                                                 borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: Text(

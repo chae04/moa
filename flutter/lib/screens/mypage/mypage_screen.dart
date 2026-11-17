@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/services/auth_service.dart';
 import 'package:moa/screens/auth/login_screen.dart';
@@ -83,7 +84,7 @@ class _MypageScreenState extends State<MypageScreen> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: primaryColor.withOpacity(0.2),
+                        backgroundColor: primaryColor.withValues(alpha: 0.2),
                         child: Icon(Icons.person, color: primaryColor),
                       ),
                       SizedBox(width: 12),
@@ -224,9 +225,9 @@ class _MypageScreenState extends State<MypageScreen> {
                               (route) => false,
                             );
                           }
-                        } on DioException catch (e) {
+                        } catch (e) {
                           // 서버가 보낸 {"message": "..."} 를 그대로 표시 (예: "비밀번호가 올바르지 않습니다.")
-                          final message = e.response?.data?['message'] ?? '탈퇴 실패';
+                          final message = apiErrorMessage(e, '탈퇴 실패');
                           ScaffoldMessenger.of(
                             context,
                           ).showSnackBar(SnackBar(content: Text(message)));
@@ -248,7 +249,7 @@ class _MypageScreenState extends State<MypageScreen> {
           // 로딩 오버레이
           if (isDeleting)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: Center(child: CircularProgressIndicator(color: Colors.white)),
             ),
         ],
