@@ -1,0 +1,9 @@
+<!-- [역할] 개발(debug) 빌드 전용 안드로이드 설정
+     - 안드로이드 9 이상은 http(암호화 안 된 통신)를 기본으로 막는다.
+     - 로컬 서버(http://10.0.2.2:8080)에 접속하려고 debug 빌드에서만 허용한다.
+     - release(출시) 빌드에는 합쳐지지 않는다. 배포 후에는 HTTPS를 쓰므로 필요 없다. -->
+     
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 개발용: 안드로이드 9+는 기본적으로 http(암호화 안 된 통신)를 막음. debug 빌드에서만 허용 -->
+    <application android:usesCleartextTraffic="true" />
+</manifest>

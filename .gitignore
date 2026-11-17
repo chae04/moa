@@ -54,7 +54,6 @@ server/*.war
 server/HELP.md
 
 # Flutter Android
-flutter/android/app/src/debug/
 flutter/android/app/src/profile/
 flutter/android/build/
 flutter/android/local.properties
