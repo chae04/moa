@@ -20,4 +20,7 @@ WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 
 # 한국 시간 기준으로 실행 (createdAt 등 LocalDateTime.now()가 서버 시간대를 따름)
-ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]
+# 메모리 제한 (Railway는 메모리 사용량으로 과금):
+# -Xmx256m: 힙 최대 256MB (기본값은 컨테이너 메모리의 1/4이라 큰 서버에서는 필요 이상으로 잡음)
+# -XX:+UseSerialGC: 가장 단순한 GC. 혼자 쓰는 작은 서버에서는 G1보다 메모리를 덜 씀
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-Xmx256m", "-XX:+UseSerialGC", "-jar", "app.jar"]
