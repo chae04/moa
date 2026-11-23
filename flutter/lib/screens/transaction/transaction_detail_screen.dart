@@ -113,11 +113,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     SizedBox(height: 12),
                   ],
 
-                  // 예산 카테고리 (수입이 아닐 때만)
-                  if (budgetCategoryId != null)
+                  // 예산 출처 (수입이 아닐 때만): 예산 카테고리 이름, 또는 "저축에서"/"투자에서"(모아 둔 돈에서 꺼내 쓴 지출)
+                  if (widget.transaction.sourceLabel != null)
                     Column(
                       children: [
-                        _buildDetailRow('예산 카테고리', budgetCategoryName),
+                        _buildDetailRow('예산 출처', widget.transaction.sourceLabel!),
                         SizedBox(height: 12),
                       ],
                     ),

@@ -22,6 +22,15 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
 
   @override
+  void dispose() {
+    // 화면이 사라질 때 컨트롤러·포커스 정리 (메모리 누수 방지)
+    emailController.dispose();
+    passwordController.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Scaffold: 앱 화면의 기본 뼈대
     return Scaffold(
@@ -98,7 +107,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SignupScreen()),
-                  );
+                  ).then((_) {
+                    // 회원가입 화면에서 돌아오면 로그인하려다 입력해 둔 값을 비움
+                    // (다른 이메일로 가입했을 수 있어서 남아 있으면 헷갈림)
+                    emailController.clear();
+                    passwordController.clear();
+                  });
                 },
                 child: Text('회원가입'),
               ),

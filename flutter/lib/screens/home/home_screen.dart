@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/models/home_model.dart';
+import 'package:moa/utils/format.dart';
 import 'package:moa/screens/transaction/transaction_type_screen.dart';
-import 'package:moa/services/home_service.dart';
+import 'package:moa/data/app_repositories.dart'; // 모드(로컬/서버)에 맞는 저장소
+import 'package:moa/data/repositories.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -27,7 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int totalSaving = 0; // 총 저축
   int totalInvest = 0; // 총 투자
 
-  final HomeService _homeService = HomeService(); // 홈 데이터는 서버가 한 번에 계산해서 줌
+  final HomeRepository _homeService =
+      AppRepositories.home; // 홈 데이터는 저장소가 한 번에 계산해서 줌 (로컬/서버)
   late DateTime _focusedDay; // 현재 선택된 날짜
   List<CategorySummary> budgetCategories = []; // 홈에 표시할 카테고리 (예산·사용액·잔액 포함)
   int? dailyBudget; // 일일 예산 추천 (지난달이거나 비율이 없으면 null)
@@ -70,7 +73,9 @@ class _HomeScreenState extends State<HomeScreen> {
         totalSaving = home.totalSaving;
         totalInvest = home.totalInvest;
         // 삭제됐거나 홈 표시를 끈 카테고리는 바를 그리지 않음 (서버 목록에는 들어 있음)
-        budgetCategories = home.categories.where((c) => c.showOnHome && !c.deleted).toList();
+        budgetCategories = home.categories
+            .where((c) => c.showOnHome && !c.deleted)
+            .toList();
         dailyBudget = home.dailyBudget;
         // 달력은 날짜로 금액을 찾으므로 목록 → Map<날짜, 금액>으로 변환
         dailyExpense = {for (var d in home.dailyExpenses) d.date: d.amount};
@@ -95,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(width: 10), // 이름과 금액 사이 간격
           Expanded(
             child: Text(
-              '${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+              formatWon(amount),
               textAlign: TextAlign.right, // 금액 끝을 맞춰서 자릿수 비교가 쉬움
               maxLines: 1, // 두 줄로 넘어가지 않게
               overflow: TextOverflow.ellipsis, // 그래도 넘치면 ...으로
@@ -121,8 +126,9 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(
           width: 90,
           child: Text(
-            '${balance.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
-            style: TextStyle(fontSize: 12),
+            formatWon(balance),
+            // 예산을 넘겨 쓴 카테고리(잔액 음수)는 빨간색으로 바로 보이게
+            style: TextStyle(fontSize: 12, color: balance < 0 ? Colors.red : null),
           ),
         ),
         SizedBox(width: 8),
@@ -192,32 +198,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 30),
+            SizedBox(height: 20),
 
             // 수입, 지출, 저축, 투자 금액 (2행 2열: 원래 카드와 같은 두 줄 높이라 달력 크기 유지)
-            Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSummaryRow('수입', totalIncome, Colors.blue),
-                    ),
-                    SizedBox(width: 24), // 두 열 사이 간격
-                    Expanded(
-                      child: _buildSummaryRow('지출', totalExpense, Colors.red),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(child: _buildSummaryRow('저축', totalSaving, Colors.green)),
-                    SizedBox(width: 24),
-                    Expanded(child: _buildSummaryRow('투자', totalInvest, Colors.green)),
-                  ],
-                ),
-              ],
+            // 연한 배경 카드로 묶음. 카드 안쪽 여백(위아래 10씩)만큼 위아래 간격을 30 → 20으로 줄여 달력 크기는 그대로
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: _buildSummaryRow('수입', totalIncome, Colors.blue)),
+                      SizedBox(width: 24), // 두 열 사이 간격
+                      Expanded(child: _buildSummaryRow('지출', totalExpense, Colors.red)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: _buildSummaryRow('저축', totalSaving, Colors.green)),
+                      SizedBox(width: 24),
+                      Expanded(child: _buildSummaryRow('투자', totalInvest, Colors.green)),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: 30),
+            SizedBox(height: 20),
 
             // 캘린더
             Expanded(
@@ -311,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           if (amount != null)
                             Text(
-                              '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                              '-${formatNumber(amount)}',
                               style: TextStyle(fontSize: 9, color: Colors.red),
                             ),
                         ],
@@ -330,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text('${day.day}', style: TextStyle(fontSize: 12)),
                           if (amount != null)
                             Text(
-                              '-${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                              '-${formatNumber(amount)}',
                               style: TextStyle(fontSize: 9, color: Colors.red),
                             ),
                         ],
@@ -351,10 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Column(
               children: budgetCategories.map((category) {
                 return Column(
-                  children: [
-                    _buildProgressBar(category),
-                    SizedBox(height: 10),
-                  ],
+                  children: [_buildProgressBar(category), SizedBox(height: 10)],
                 );
               }).toList(),
             ),
@@ -368,9 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text('일일 추천 예산', style: TextStyle(fontSize: 13, color: Colors.grey)),
                 Text(
                   // null(지난달·비율 없음)이면 0원 대신 '-' (0원은 "오늘 쓸 돈 없음"으로 오해할 수 있음)
-                  dailyBudget == null
-                      ? '-'
-                      : '${dailyBudget.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
+                  dailyBudget == null ? '-' : formatWon(dailyBudget!),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,

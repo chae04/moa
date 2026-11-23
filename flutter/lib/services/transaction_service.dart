@@ -7,28 +7,33 @@
 //   → 실패하면 DioException(400/404)이 호출한 화면으로 전달된다.
 
 import 'package:dio/dio.dart';
+import 'package:moa/data/repositories.dart'; // 서버 구현으로서 지키는 인터페이스
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/services/api_client.dart';
 
-class TransactionService {
+class TransactionService implements TransactionRepository {
   final Dio _dio = ApiClient.dio; // 토큰 헤더가 자동으로 붙는 공통 클라이언트
 
   // 거래 추가 (수입이면 서버가 자동 저축·투자도 생성)
+  @override
   Future<void> addTransaction(TransactionModel transaction) async {
     await _dio.post('/api/transactions', data: transaction.toJson());
   }
 
   // 거래 수정
+  @override
   Future<void> updateTransaction(TransactionModel transaction) async {
     await _dio.put('/api/transactions/${transaction.id}', data: transaction.toJson());
   }
 
   // 거래 삭제 (수입이면 서버가 자동 거래도 같이 삭제)
+  @override
   Future<void> deleteTransaction(int id) async {
     await _dio.delete('/api/transactions/$id');
   }
 
   // 월별 거래 조회
+  @override
   Future<List<TransactionModel>> getMonthlyTransactions(int year, int month) async {
     final response = await _dio.get(
       '/api/transactions',

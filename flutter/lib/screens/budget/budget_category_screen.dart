@@ -3,7 +3,8 @@ import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
 import 'package:moa/models/budget_category_model.dart';
-import 'package:moa/services/budget_category_service.dart';
+import 'package:moa/data/app_repositories.dart'; // 모드(로컬/서버)에 맞는 저장소
+import 'package:moa/data/repositories.dart';
 import 'package:moa/screens/budget/budget_form_screen.dart';
 
 class BudgetCategoryScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class BudgetCategoryScreen extends StatefulWidget {
 }
 
 class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
-  final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
+  final CategoryRepository _budgetCategoryService = AppRepositories.categories;
   List<BudgetCategoryModel> categories = [];
   bool isLoading = true;
 
@@ -32,9 +33,9 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
     } catch (e) {
       // 서버 꺼짐 등: 목록은 이전 값 유지, 알림만
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(apiErrorMessage(e, '카테고리를 불러오지 못했어요.'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(apiErrorMessage(e, '카테고리를 불러오지 못했어요.'))));
     } finally {
       if (mounted) setState(() => isLoading = false); // 실패해도 무한 로딩 방지
     }
@@ -251,7 +252,9 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(apiErrorMessage(e, '홈 표시를 바꾸지 못했어요.')),
+                                      content: Text(
+                                        apiErrorMessage(e, '홈 표시를 바꾸지 못했어요.'),
+                                      ),
                                     ),
                                   );
                                 }

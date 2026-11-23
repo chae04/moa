@@ -3,8 +3,8 @@ import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/models/budget_model.dart';
-import 'package:moa/services/budget_category_service.dart';
-import 'package:moa/services/budget_service.dart';
+import 'package:moa/data/app_repositories.dart'; // 모드(로컬/서버)에 맞는 저장소
+import 'package:moa/data/repositories.dart';
 import 'package:moa/constants/styles.dart';
 
 class BudgetFormScreen extends StatefulWidget {
@@ -15,8 +15,8 @@ class BudgetFormScreen extends StatefulWidget {
 }
 
 class _BudgetScreenState extends State<BudgetFormScreen> {
-  final BudgetService _budgetService = BudgetService();
-  final BudgetCategoryService _budgetCategoryService = BudgetCategoryService();
+  final RatioRepository _budgetService = AppRepositories.ratios;
+  final CategoryRepository _budgetCategoryService = AppRepositories.categories;
   Map<int, bool> showOnHome = {};
 
   List<BudgetCategoryModel> categories = [];

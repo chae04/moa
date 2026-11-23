@@ -5,13 +5,15 @@
 // - 삭제는 서버가 소프트 삭제(isDeleted)로 처리하고, 목록에서는 자동으로 빠진다.
 
 import 'package:dio/dio.dart';
+import 'package:moa/data/repositories.dart'; // 서버 구현으로서 지키는 인터페이스
 import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/services/api_client.dart';
 
-class BudgetCategoryService {
+class BudgetCategoryService implements CategoryRepository {
   final Dio _dio = ApiClient.dio;
 
   // 카테고리 목록 불러오기 (서버가 삭제 제외 + 순서대로 정렬해서 줌)
+  @override
   Future<List<BudgetCategoryModel>> getCategories() async {
     final response = await _dio.get('/api/categories');
     final List<dynamic> list = response.data; // 서버 응답: [{...}, {...}]
@@ -19,6 +21,7 @@ class BudgetCategoryService {
   }
 
   // 카테고리 추가 (순서는 서버가 맨 뒤로 정함)
+  @override
   Future<void> addCategory({
     required String name,
     required bool showOnHome,
@@ -31,11 +34,13 @@ class BudgetCategoryService {
   }
 
   // 카테고리 수정 (이름, 홈 표시, 일일 포함)
+  @override
   Future<void> updateCategory(BudgetCategoryModel category) async {
     await _dio.put('/api/categories/${category.id}', data: category.toJson());
   }
 
   // 카테고리 삭제 (서버에서 소프트 삭제)
+  @override
   Future<void> deleteCategory(int id) async {
     await _dio.delete('/api/categories/$id');
   }

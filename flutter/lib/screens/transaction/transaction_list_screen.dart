@@ -3,7 +3,8 @@ import 'package:moa/utils/api_error.dart';
 import 'package:moa/models/transaction_model.dart';
 import 'package:moa/screens/transaction/transaction_form_screen.dart';
 import 'package:moa/screens/transaction/transaction_type_screen.dart';
-import 'package:moa/services/transaction_service.dart';
+import 'package:moa/data/app_repositories.dart'; // 모드(로컬/서버)에 맞는 저장소
+import 'package:moa/data/repositories.dart';
 import 'package:moa/screens/transaction/transaction_detail_screen.dart';
 import 'package:moa/constants/colors.dart';
 
@@ -25,7 +26,7 @@ class TransactionListScreen extends StatefulWidget {
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
-  final TransactionService _transactionService = TransactionService();
+  final TransactionRepository _transactionService = AppRepositories.transactions;
   List<TransactionModel> transactions = [];
   bool isLoading = true;
   int selectedYear = DateTime.now().year;
@@ -72,9 +73,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       // 서버 꺼짐 등: 목록은 이전 값 유지, 로딩만 끄고 알림
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(apiErrorMessage(e, '거래 목록을 불러오지 못했어요.'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(apiErrorMessage(e, '거래 목록을 불러오지 못했어요.'))));
       return;
     }
 
@@ -195,6 +196,17 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             // 로딩 중이면 스피너, 아니면 목록 표시
             isLoading
                 ? CircularProgressIndicator()
+                : transactions.isEmpty
+                // 빈 날: 안내 문구 (아무것도 없는 흰 화면보다 다음 행동을 알려 줌)
+                ? Expanded(
+                    child: Center(
+                      child: Text(
+                        '이 날은 거래가 없어요.\n아래 추가 버튼으로 기록해 보세요.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                      ),
+                    ),
+                  )
                 : Expanded(
                     child: ListView.builder(
                       itemCount: transactions.length,
@@ -347,8 +359,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                             } catch (e) {
                                               // 이미 지워진 거래(404), 서버 꺼짐 등
                                               if (!mounted) return;
-                                              final message =
-                                                  apiErrorMessage(e, '삭제에 실패했어요.');
+                                              final message = apiErrorMessage(
+                                                e,
+                                                '삭제에 실패했어요.',
+                                              );
                                               ScaffoldMessenger.of(
                                                 this.context,
                                               ).showSnackBar(
@@ -382,7 +396,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                           ),
                                           SizedBox(width: 10),
                                           Text(
-                                            transaction.category,
+                                            // 저축·투자에서 꺼내 쓴 지출이면 출처도 같이 표시 (예: 식비 · 저축에서)
+                                            transaction.fundSource != null
+                                                ? '${transaction.category} · ${transaction.sourceLabel}'
+                                                : transaction.category,
                                             style: TextStyle(
                                               color: Colors.grey,
                                               fontSize: 12,

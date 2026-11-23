@@ -15,6 +15,8 @@ class TransactionModel {
   DateTime date;
   String? memo;
   final int? sourceTransactionId; // 자동 거래면 원본 수입의 id, 아니면 null
+  // 모아 둔 돈에서 꺼내 쓴 지출의 출처: '저축' / '투자' (로컬 모드 전용, 이때 budgetCategoryId는 null)
+  String? fundSource;
 
   TransactionModel({
     this.id = 0, // 새 거래는 생략 가능
@@ -27,10 +29,14 @@ class TransactionModel {
     required this.date,
     this.memo,
     this.sourceTransactionId,
+    this.fundSource,
   });
 
   // 자동 거래 여부 (서버가 수정을 막으므로 화면에서 수정 버튼을 숨기는 데 사용)
   bool get isAuto => sourceTransactionId != null;
+
+  // 화면에 보여 줄 출처 이름: 예산 카테고리 이름 또는 "저축에서"/"투자에서"
+  String? get sourceLabel => fundSource != null ? '$fundSource에서' : budgetCategoryName;
 
   // 서버 응답 → 모델
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +56,7 @@ class TransactionModel {
 
   // 요청 본문 (서버 TransactionRequest: title, amount, type, category, budgetCategoryId, date, memo)
   // id는 URL(/api/transactions/{id})로 보내고, budgetCategoryName·sourceTransactionId는 서버가 정하는 값이라 안 보냄
+  // fundSource는 로컬 모드 전용 기능이라 서버에 보내지 않음 (서버 모드 화면에서는 고를 수 없음)
   Map<String, dynamic> toJson() {
     return {
       'title': title,

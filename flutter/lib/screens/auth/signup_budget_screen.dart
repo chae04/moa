@@ -1,15 +1,23 @@
+// [역할] 처음 쓰는 예산 비율 설정 화면 (두 모드에서 같이 사용)
+// - 서버 모드: 회원가입 두 번째 단계. email·password를 받아 서버에 가입 + 기본 카테고리 + 비율을 한 번에 저장
+// - 로컬 모드: 앱 첫 실행 화면. email 없이 열리고, 폰 안 DB에 기본 카테고리 + 비율을 저장한 뒤 홈으로
+
 import 'package:flutter/material.dart';
+import 'package:moa/data/app_repositories.dart';
+import 'package:moa/screens/shell_screen.dart';
 import 'package:moa/utils/api_error.dart';
 import 'package:moa/constants/colors.dart';
 import 'package:moa/constants/styles.dart';
 import 'package:moa/services/auth_service.dart';
-import 'package:moa/screens/auth/login_screen.dart';
 
 class SignupBudgetScreen extends StatefulWidget {
-  final String email;
-  final String password;
+  final String? email; // null이면 로컬 모드 첫 실행 설정
+  final String? password;
 
-  const SignupBudgetScreen({super.key, required this.email, required this.password});
+  const SignupBudgetScreen({super.key, this.email, this.password});
+
+  // 로컬 첫 실행 설정인지 (서버 가입 흐름이면 이메일이 있음)
+  bool get isLocalSetup => email == null;
 
   @override
   State<SignupBudgetScreen> createState() => _SignupBudgetScreenState();
@@ -170,10 +178,37 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
 
                             setState(() => isLoading = true);
                             try {
-                              // 회원가입 + 기본 카테고리 + 비율을 서버에 한 번에 저장
+                              if (widget.isLocalSetup) {
+                                // 로컬: 폰 안 DB에 기본 카테고리 + 이번 달 비율 저장 (하나의 트랜잭션)
+                                await AppRepositories.setup.createInitial(
+                                  categories: categories
+                                      .map(
+                                        (c) => (
+                                          name: c['name'] as String,
+                                          // 체크 상태는 categories가 아니라 includeInDaily 맵에 저장되어 있음
+                                          includeInDaily:
+                                              includeInDaily[c['name']] ?? false,
+                                          ratio: c['ratio'] as int,
+                                        ),
+                                      )
+                                      .toList(),
+                                  savingRatio: savingRatio,
+                                  investRatio: investRatio,
+                                );
+                                if (!context.mounted) return;
+                                // 설정 끝 → 홈. 이전 화면이 없으므로 스택을 홈으로 교체
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => ShellScreen()),
+                                  (route) => false,
+                                );
+                                return;
+                              }
+
+                              // 서버: 회원가입 + 기본 카테고리 + 비율을 서버에 한 번에 저장
                               await _authService.signUp(
-                                email: widget.email,
-                                password: widget.password,
+                                email: widget.email!,
+                                password: widget.password!,
                                 savingRatio: savingRatio,
                                 investRatio: investRatio,
                                 categories: categories
@@ -181,25 +216,25 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
                                       (c) => <String, dynamic>{
                                         'name': c['name'],
                                         // 체크 상태는 categories가 아니라 includeInDaily 맵에 저장되어 있음
-                                        'includeInDaily': includeInDaily[c['name']] ?? false,
+                                        'includeInDaily':
+                                            includeInDaily[c['name']] ?? false,
                                         'ratio': c['ratio'],
                                       },
                                     )
                                     .toList(),
                               );
 
-
                               if (mounted) {
                                 Navigator.pushAndRemoveUntil(
                                   context,
-                                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                                  // 가입 응답으로 받은 토큰이 이미 저장됨 → 다시 로그인할 필요 없이 바로 홈
+                                  MaterialPageRoute(builder: (context) => ShellScreen()),
                                   (route) => false,
                                 );
                               }
                             } catch (e) {
                               // 서버가 보낸 {"message": "..."} 를 그대로 표시 (예: "이미 사용 중인 이메일입니다.")
-                              final message =
-                                  apiErrorMessage(e, '회원가입에 실패했어요.');
+                              final message = apiErrorMessage(e, '회원가입에 실패했어요.');
 
                               ScaffoldMessenger.of(
                                 context,
@@ -216,16 +251,18 @@ class _SignupBudgetScreenState extends State<SignupBudgetScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : Text('완료'),
+                        : Text(widget.isLocalSetup ? '시작하기' : '완료'),
                   ),
                 ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('돌아가기'),
+                // 로컬 첫 실행은 돌아갈 이전 화면이 없음 (누르면 빈 화면이 됨) → 숨김
+                if (!widget.isLocalSetup)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('돌아가기'),
+                    ),
                   ),
-                ),
               ],
             ),
           ],

@@ -5,8 +5,12 @@
 // - 스낵바를 띄울지는 화면이 정한다. (이 함수는 문장만 만든다)
 
 import 'package:dio/dio.dart';
+import 'package:moa/data/app_exception.dart';
 
 String apiErrorMessage(Object error, String fallback) {
+  // 로컬 모드의 규칙 위반 (서버 ApiException과 같은 한글 문구)
+  if (error is AppException) return error.message;
+
   // dio 에러가 아니면 (코드 버그 등) 기본 문구
   if (error is! DioException) return fallback;
 
