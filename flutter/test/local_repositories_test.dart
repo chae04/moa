@@ -127,6 +127,26 @@ void main() {
       await expectLater(() => categories.deleteCategory(living), throwsAppException('카테고리는 최소 1개 존재해야 합니다.'));
     });
 
+    test('순서 바꾸기: 목록·비율 순서에 반영, 목록과 다른 id는 거절', () async {
+      await setUpDefault(); // 생활비, 자유비
+      await categories.addCategory(name: '교통비', showOnHome: true);
+      final ids = (await categories.getCategories()).map((c) => c.id).toList();
+
+      await categories.reorderCategories([ids[2], ids[0], ids[1]]); // 교통비를 맨 앞으로
+      expect((await categories.getCategories()).map((c) => c.name), ['교통비', '생활비', '자유비']);
+      // 비율 묶음도 카테고리 표시 순서를 따름
+      expect((await ratios.getRatios(thisMonth)).categories.map((c) => c.name), ['생활비', '자유비']);
+
+      await expectLater(
+        () => categories.reorderCategories([ids[0], ids[1]]), // 하나 빠짐
+        throwsAppException('카테고리 목록이 바뀌었어요. 화면을 새로고침한 뒤 다시 시도해주세요.'),
+      );
+      await expectLater(
+        () => categories.reorderCategories([ids[0], ids[0], ids[1]]), // 중복
+        throwsAppException('카테고리 목록이 바뀌었어요. 화면을 새로고침한 뒤 다시 시도해주세요.'),
+      );
+    });
+
     test('이름은 1~10자', () async {
       await expectLater(() => categories.addCategory(name: '  ', showOnHome: false), throwsAppException('카테고리 이름을 입력해주세요.'));
       await expectLater(() => categories.addCategory(name: '열한글자카테고리이름임', showOnHome: false),

@@ -7,6 +7,7 @@ import 'package:moa/data/app_repositories.dart'; // 모드(로컬/서버)에 맞
 import 'package:moa/data/repositories.dart';
 import 'package:moa/screens/transaction/transaction_detail_screen.dart';
 import 'package:moa/constants/colors.dart';
+import 'package:moa/widgets/month_calendar.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final int? year;
@@ -27,7 +28,9 @@ class TransactionListScreen extends StatefulWidget {
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
   final TransactionRepository _transactionService = AppRepositories.transactions;
-  List<TransactionModel> transactions = [];
+  List<TransactionModel> transactions = []; // 선택한 날의 거래
+  List<TransactionModel> _monthTransactions = []; // 그 달 전체 거래 (달력의 날짜별 지출 계산용)
+  bool _showCalendar = false; // 제목 옆 달력 버튼으로 펼치기/접기
   bool isLoading = true;
   int selectedYear = DateTime.now().year;
   int selectedMonth = DateTime.now().month;
@@ -81,6 +84,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     if (!mounted) return;
     setState(() {
+      _monthTransactions = result;
       // 선택된 날짜의 거래만 필터링
       transactions = result
           .where(
@@ -92,6 +96,60 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           .toList();
       isLoading = false;
     });
+  }
+
+  // 달력에 표시할 날짜별 지출 합계 (그날 0시 → 금액)
+  Map<DateTime, int> get _dailyExpense {
+    final map = <DateTime, int>{};
+    for (final t in _monthTransactions.where((t) => t.type == '지출')) {
+      final day = DateTime(t.date.year, t.date.month, t.date.day);
+      map[day] = (map[day] ?? 0) + t.amount;
+    }
+    return map;
+  }
+
+  // 날짜 선택 (달력·날짜 줄 공통): 같은 달이면 이미 읽은 거래에서 다시 거르고, 다른 달이면 새로 읽음
+  void _selectDate(DateTime date) {
+    final sameMonth = date.year == selectedYear && date.month == selectedMonth;
+    setState(() {
+      _selectedDate = date;
+      selectedYear = date.year;
+      selectedMonth = date.month;
+    });
+    if (sameMonth) {
+      setState(() {
+        transactions = _monthTransactions
+            .where(
+              (t) =>
+                  t.date.year == date.year &&
+                  t.date.month == date.month &&
+                  t.date.day == date.day,
+            )
+            .toList();
+      });
+    } else {
+      _loadTransactions();
+    }
+  }
+
+  // 한 달 달력 (예전 홈 화면의 캘린더)
+  Widget _buildCalendar() {
+    return MonthCalendar(
+      focusedDay: _selectedDate,
+      selectedDay: _selectedDate,
+      dailyExpense: _dailyExpense,
+      onDaySelected: _selectDate,
+      // 달을 넘기면 그 달 1일을 선택하고 그 달 거래를 읽음 (이번 달로 돌아오면 오늘)
+      onPageChanged: (focused) {
+        final now = DateTime.now();
+        final isThisMonth = focused.year == now.year && focused.month == now.month;
+        _selectDate(
+          isThisMonth
+              ? DateTime(now.year, now.month, now.day)
+              : DateTime(focused.year, focused.month, 1),
+        );
+      },
+    );
   }
 
   // 상단 날짜 위젯
@@ -187,11 +245,29 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Text('거래 목록', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            // 제목 + 달력 펼치기 버튼
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '거래 목록',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  onPressed: () => setState(() => _showCalendar = !_showCalendar),
+                  icon: Icon(
+                    _showCalendar ? Icons.calendar_month : Icons.calendar_month_outlined,
+                    color: primaryColor,
+                  ),
+                  tooltip: _showCalendar ? '달력 접기' : '달력 펼치기',
+                ),
+              ],
+            ),
 
             SizedBox(height: 16),
 
-            _buildDateSlider(),
+            // 달력을 펼치면 한 달 달력, 접으면 앞뒤 3일 날짜 줄
+            _showCalendar ? _buildCalendar() : _buildDateSlider(),
 
             // 로딩 중이면 스피너, 아니면 목록 표시
             isLoading

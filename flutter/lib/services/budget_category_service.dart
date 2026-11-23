@@ -5,6 +5,7 @@
 // - 삭제는 서버가 소프트 삭제(isDeleted)로 처리하고, 목록에서는 자동으로 빠진다.
 
 import 'package:dio/dio.dart';
+import 'package:moa/data/app_exception.dart';
 import 'package:moa/data/repositories.dart'; // 서버 구현으로서 지키는 인터페이스
 import 'package:moa/models/budget_category_model.dart';
 import 'package:moa/services/api_client.dart';
@@ -44,4 +45,13 @@ class BudgetCategoryService implements CategoryRepository {
   Future<void> deleteCategory(int id) async {
     await _dio.delete('/api/categories/$id');
   }
+
+  // 서버에는 순서 변경 API가 없음 → 화면이 canReorder로 끌기를 숨김
+  // (서버도 맞추려면 PUT /api/categories/order 같은 API를 추가하고 여기서 호출)
+  @override
+  bool get canReorder => false;
+
+  @override
+  Future<void> reorderCategories(List<int> orderedIds) async =>
+      throw const AppException('서버 모드에서는 순서를 바꿀 수 없어요.');
 }

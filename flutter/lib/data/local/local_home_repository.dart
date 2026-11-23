@@ -12,6 +12,7 @@ import 'package:moa/data/local/app_database.dart';
 import 'package:moa/data/local/local_transaction_repository.dart';
 import 'package:moa/data/repositories.dart';
 import 'package:moa/models/home_model.dart';
+import 'package:moa/models/transaction_model.dart';
 
 class LocalHomeRepository implements HomeRepository {
   final AppDatabase _db;
@@ -107,6 +108,8 @@ class LocalHomeRepository implements HomeRepository {
         .map((d) => DailyExpense(date: d, amount: expenseByDate[d]!))
         .toList();
 
+    final daily = _daily(year, month, applyFrom, summaries, transactions);
+
     return HomeModel(
       totalIncome: totalIncome,
       totalExpense: totalExpense,
@@ -114,33 +117,73 @@ class LocalHomeRepository implements HomeRepository {
       totalInvest: totalInvest,
       categories: summaries,
       dailyExpenses: dailyExpenses,
-      dailyBudget: _dailyBudget(year, month, applyFrom, summaries),
+      dailyBudget: daily?.perDay,
+      todayBudget: daily?.todayBudget,
+      todaySpent: daily?.todaySpent,
+      todayRemaining: daily?.todayRemaining,
     );
   }
 
-  // 일일 추천 예산 = 활성 includeInDaily 카테고리 잔액 합 ÷ 남은 일수
-  // - 비율이 없거나 지난달이면 null, 잔액 합이 0 이하면 0
-  // - 남은 일수: 이번 달이면 말일 - 오늘 + 1, 다음 달 이후면 그 달 전체 일수
-  int? _dailyBudget(
+  // 하루 추천 금액, 오늘 추천, 오늘 남은 돈
+  // - 오늘 아침 잔액 = 활성 includeInDaily 카테고리 잔액 합 + 오늘 쓴 돈 (오늘 지출 전으로 되돌린 값)
+  // - 오늘 추천 = 오늘 아침 잔액 ÷ 남은 일수(오늘 포함). 오늘 지출을 넣어도 그날은 그대로
+  // - 오늘 남은 돈 = 오늘 추천 - 오늘 쓴 돈 (음수면 초과)
+  // - 하루 추천 금액(내일부터) = (오늘 아침 잔액 - max(오늘 추천, 오늘 쓴 돈)) ÷ (남은 일수 - 1)
+  //   · 오늘 추천 안에서 쓰면 그대로, 넘게 써서 마이너스가 되면 넘은 만큼 남은 날에 나눠 줄어듦
+  //   · 이달 마지막 날이면 내일이 없으므로 null
+  // - 다음 달 이후: 그 달 전체 잔액 ÷ 그 달 일수 (오늘 값은 없음)
+  // - 비율이 없거나 지난달이면 null, 잔액이 0 이하면 0
+  ({int? perDay, int? todayBudget, int? todaySpent, int? todayRemaining})? _daily(
     int year,
     int month,
     String? applyFrom,
     List<CategorySummary> summaries,
+    List<TransactionModel> transactions,
   ) {
     if (applyFrom == null) return null;
 
-    final today = DateTime.now();
+    final now = DateTime.now();
     final target = year * 12 + month; // 월을 숫자 하나로 바꿔서 비교
-    final thisMonth = today.year * 12 + today.month;
+    final thisMonth = now.year * 12 + now.month;
     if (target < thisMonth) return null;
 
     final daysInMonth = DateTime(year, month + 1, 0).day; // 다음 달 0일 = 이번 달 말일
-    final remainingDays = target == thisMonth ? daysInMonth - today.day + 1 : daysInMonth;
+    final dailyCategories = summaries.where((s) => s.includeInDaily && !s.deleted);
+    final remaining = dailyCategories.fold(0, (sum, s) => sum + s.remaining);
+    int perDayOf(int amount, int days) => amount <= 0 ? 0 : (amount / days).round();
 
-    final remaining = summaries
-        .where((s) => s.includeInDaily && !s.deleted)
-        .fold(0, (sum, s) => sum + s.remaining);
-    if (remaining <= 0) return 0;
-    return (remaining / remainingDays).round();
+    // 다음 달 이후: 오늘이 없으므로 그 달 전체 기준
+    if (target > thisMonth) {
+      return (
+        perDay: perDayOf(remaining, daysInMonth),
+        todayBudget: null,
+        todaySpent: null,
+        todayRemaining: null,
+      );
+    }
+
+    // 이번 달
+    final remainingDays = daysInMonth - now.day + 1; // 오늘 포함
+    final dailyIds = dailyCategories.map((s) => s.categoryId).toSet();
+    final today = DateTime(now.year, now.month, now.day);
+    final todaySpent = transactions
+        .where((t) => t.date == today && dailyIds.contains(t.budgetCategoryId))
+        .fold(0, (sum, t) => sum + t.amount);
+
+    final startOfDay = remaining + todaySpent; // 오늘 아침 기준 잔액
+    final todayBudget = perDayOf(startOfDay, remainingDays);
+    final usedToday = todaySpent > todayBudget
+        ? todaySpent
+        : todayBudget; // 넘게 썼으면 실제로 쓴 만큼
+    final perDay = remainingDays > 1
+        ? perDayOf(startOfDay - usedToday, remainingDays - 1)
+        : null;
+
+    return (
+      perDay: perDay,
+      todayBudget: todayBudget,
+      todaySpent: todaySpent,
+      todayRemaining: todayBudget - todaySpent,
+    );
   }
 }

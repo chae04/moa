@@ -101,6 +101,56 @@ void main() {
     });
   });
 
+  group('오늘 남은 돈', () {
+    // 생활비 70%(일일 예산 포함), 수입 1,000,000원 → 생활비 예산 700,000원
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final remainingDays = daysInMonth - now.day + 1; // 오늘 포함
+    final todayBudget = (700000 / remainingDays).round(); // 오늘 추천
+    int? future(int usedToday) =>
+        remainingDays > 1 ? ((700000 - usedToday) / (remainingDays - 1)).round() : null;
+
+    test('오늘 추천 안에서 쓰면: 오늘 추천·하루 추천 금액 그대로, 오늘 남은 돈만 줄어듦', () async {
+      final living = (await db.select(db.budgetCategories).get()).single.id;
+      await transactions.addTransaction(tx(type: '수입', amount: 1000000, category: '월급'));
+
+      final before = await home.getHome(now.year, now.month);
+      expect(before.todayBudget, todayBudget);
+      expect(before.todayRemaining, todayBudget);
+      expect(before.dailyBudget, future(todayBudget));
+
+      await transactions.addTransaction(tx(type: '지출', amount: 1000, budgetCategoryId: living));
+      await transactions.addTransaction(tx(type: '지출', amount: 5000, fundSource: '저축')); // 일일 예산 밖
+
+      final after = await home.getHome(now.year, now.month);
+      expect(after.todayBudget, todayBudget); // 그날은 그대로
+      expect(after.todaySpent, 1000); // 저축에서 꺼낸 돈은 제외
+      expect(after.todayRemaining, todayBudget - 1000);
+      expect(after.dailyBudget, future(todayBudget)); // 추천 안에서 썼으면 내일부터 금액도 그대로
+    });
+
+    test('오늘 넘게 써서 마이너스면: 넘은 만큼 남은 날의 하루 추천 금액이 줄어듦', () async {
+      final living = (await db.select(db.budgetCategories).get()).single.id;
+      await transactions.addTransaction(tx(type: '수입', amount: 1000000, category: '월급'));
+      final spent = todayBudget + 50000; // 50,000원 초과
+      await transactions.addTransaction(tx(type: '지출', amount: spent, budgetCategoryId: living));
+
+      final h = await home.getHome(now.year, now.month);
+      expect(h.todayBudget, todayBudget);
+      expect(h.todayRemaining, -50000);
+      expect(h.dailyBudget, future(spent)); // 실제로 쓴 만큼 빼고 나눔
+      if (remainingDays > 1) expect(h.dailyBudget! < future(todayBudget)!, true);
+    });
+
+    test('다음 달은 하루 추천 금액만 있고 오늘 값은 없음', () async {
+      final next = DateTime(now.year, now.month + 1);
+      final h = await home.getHome(next.year, next.month);
+      expect(h.dailyBudget, isNotNull);
+      expect(h.todayBudget, isNull);
+      expect(h.todaySpent, isNull);
+      expect(h.todayRemaining, isNull);
+    });
+  });
+
   group('수입·지출 카테고리', () {
     test('기본 목록이 들어가 있고, 추가·이름 변경·삭제 규칙', () async {
       expect((await entries.getCategories('수입')).map((c) => c.name), ['월급', '용돈', '기타']);

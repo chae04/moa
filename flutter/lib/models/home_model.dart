@@ -10,6 +10,11 @@ class HomeModel {
   final List<CategorySummary> categories; // 그 달에 보여 줄 카테고리 (삭제·홈 숨김 포함)
   final List<DailyExpense> dailyExpenses; // 지출이 있는 날만 들어 있음
   final int? dailyBudget; // 지난달이거나 비율이 없으면 null
+  // (로컬 모드) 오늘 기준 값. 이번 달이 아니거나 서버 모드면 null
+  // - 로컬 모드 이번 달의 dailyBudget은 "내일부터 남은 날의 하루 추천 금액" (오늘 넘게 쓰면 줄어듦, 마지막 날이면 null)
+  final int? todayBudget; // 오늘 추천 = 오늘 아침 기준 잔액 ÷ 남은 일수(오늘 포함)
+  final int? todaySpent; // 오늘 쓴 돈 (일일 예산에 포함된 카테고리를 출처로 한 오늘 거래 합)
+  final int? todayRemaining; // 오늘 남은 돈 = 오늘 추천 - 오늘 쓴 돈 (음수면 초과)
 
   HomeModel({
     required this.totalIncome,
@@ -19,6 +24,9 @@ class HomeModel {
     required this.categories,
     required this.dailyExpenses,
     this.dailyBudget, // nullable이라 required 아님
+    this.todayBudget,
+    this.todaySpent,
+    this.todayRemaining,
   });
 
   factory HomeModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +42,9 @@ class HomeModel {
           .map((d) => DailyExpense.fromJson(d))
           .toList(),
       dailyBudget: json['dailyBudget'],
+      todayBudget: json['todayBudget'], // 서버는 아직 안 줌 → null
+      todaySpent: json['todaySpent'],
+      todayRemaining: json['todayRemaining'],
     );
   }
 }

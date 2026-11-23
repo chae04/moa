@@ -1,5 +1,6 @@
 // [역할] 예산 카테고리의 로컬 구현 (서버 BudgetCategoryService를 Dart로 옮김)
 // - 규칙(서버와 같음): 이름 1~10자, 홈 표시 최대 5개, 최소 1개 유지, 현재·이후 비율에 남아 있으면 삭제 불가
+// - (로컬 전용) 표시 순서 바꾸기: 홈 카드·비율 설정·예산 드롭다운이 모두 이 순서를 따름
 // - 삭제는 소프트 삭제(isDeleted = true): 지난 거래가 이 카테고리를 출처로 가리키고 있어서 행은 남긴다.
 // - 규칙을 어기면 AppException(서버와 같은 한글 문구)을 던진다.
 
@@ -92,6 +93,25 @@ class LocalCategoryRepository implements CategoryRepository {
     await (_db.update(_db.budgetCategories)..where((c) => c.id.equals(id))).write(
       const BudgetCategoriesCompanion(isDeleted: Value(true)),
     );
+  }
+
+  @override
+  bool get canReorder => true;
+
+  @override
+  Future<void> reorderCategories(List<int> orderedIds) async {
+    // 지금 활성 카테고리와 정확히 같은 id들인지 (빠지거나 중복되거나 삭제된 것이 섞이면 거절)
+    final activeIds = (await getCategories()).map((c) => c.id).toSet();
+    if (orderedIds.length != activeIds.length || !orderedIds.toSet().containsAll(activeIds)) {
+      throw const AppException('카테고리 목록이 바뀌었어요. 화면을 새로고침한 뒤 다시 시도해주세요.');
+    }
+    // 하나의 트랜잭션: 중간에 실패하면 원래 순서 그대로
+    await _db.transaction(() async {
+      for (var i = 0; i < orderedIds.length; i++) {
+        await (_db.update(_db.budgetCategories)..where((c) => c.id.equals(orderedIds[i])))
+            .write(BudgetCategoriesCompanion(orderIndex: Value(i)));
+      }
+    });
   }
 
   // ---- 내부 도우미 ----

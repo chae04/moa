@@ -194,6 +194,32 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
     }
   }
 
+  // 순서를 바꿀 수 있는지 (서버 모드는 false)
+  bool get canReorder => _budgetCategoryService.canReorder;
+
+  // 끌어서 놓았을 때: 화면 순서를 먼저 바꾸고 저장. 실패하면 저장된 순서로 다시 불러옴
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
+    // 아래로 옮기면 Flutter가 "빼기 전" 기준 위치를 주므로 하나 당김
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (newIndex == oldIndex) return;
+
+    setState(() {
+      final moved = categories.removeAt(oldIndex);
+      categories.insert(newIndex, moved);
+    });
+    try {
+      await _budgetCategoryService.reorderCategories(
+        categories.map((c) => c.id).toList(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(apiErrorMessage(e, '순서를 바꾸지 못했어요.'))));
+      _loadCategories(); // 저장된 순서로 되돌림
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -221,21 +247,29 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
             ),
             SizedBox(height: 10),
 
-            // 카테고리 목록
+            // 카테고리 목록 (≡ 손잡이를 끌어서 순서 변경)
+            if (canReorder && !isLoading && categories.length > 1)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '≡ 를 잡고 끌어서 순서를 바꿀 수 있어요. 홈 카드와 비율 설정도 이 순서를 따라요.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+              ),
             isLoading
                 ? Center(child: CircularProgressIndicator())
                 : Expanded(
                     child: Scrollbar(
                       thumbVisibility: false,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(top: 20, bottom: 20),
-
+                      child: ReorderableListView.builder(
+                        padding: const EdgeInsets.only(top: 12, bottom: 20),
+                        buildDefaultDragHandles:
+                            false, // 손잡이(≡)로만 끌기 (줄 전체 길게 누르기는 버튼과 겹쳐서 끔)
                         itemCount: categories.length,
-                        separatorBuilder: (context, index) =>
-                            Divider(color: Colors.grey[200]),
+                        onReorder: _onReorder,
                         itemBuilder: (context, index) {
                           final category = categories[index];
-                          return ListTile(
+                          final tile = ListTile(
                             leading: GestureDetector(
                               onTap: () async {
                                 if (!category.showOnHome &&
@@ -280,8 +314,28 @@ class _BudgetCategoryScreenState extends State<BudgetCategoryScreen> {
                                   onPressed: () => _deleteCategory(category),
                                   icon: Icon(Icons.delete_outline, color: primaryColor),
                                 ),
+                                // 끌기 손잡이: 잡고 위아래로 끌면 순서 변경 (서버 모드는 숨김)
+                                if (canReorder)
+                                  ReorderableDragStartListener(
+                                    index: index,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: Icon(Icons.drag_handle, color: Colors.grey),
+                                    ),
+                                  ),
                               ],
                             ),
+                          );
+                          // 순서를 바꾸는 목록은 줄마다 고유 key가 필요 (어느 줄이 어디로 갔는지 추적)
+                          return Container(
+                            key: ValueKey(category.id),
+                            decoration: BoxDecoration(
+                              color: Colors.white, // 끄는 동안 배경이 비치지 않게
+                              border: Border(
+                                bottom: BorderSide(color: Colors.grey[200]!),
+                              ),
+                            ),
+                            child: tile,
                           );
                         },
                       ),

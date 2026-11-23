@@ -30,6 +30,12 @@ abstract interface class CategoryRepository {
 
   // 소프트 삭제. 최소 1개 유지, 현재·이후 비율에 남아 있으면 실패
   Future<void> deleteCategory(int id);
+
+  // 표시 순서를 바꿀 수 있는지 (서버 모드는 서버 API가 없어서 false → 화면에서 끌기 숨김)
+  bool get canReorder;
+
+  // orderedIds 순서대로 표시 순서를 다시 매김 (삭제 안 된 카테고리 id가 빠짐없이 한 번씩 있어야 함)
+  Future<void> reorderCategories(List<int> orderedIds);
 }
 
 // 예산 비율 (서버 /api/budget-ratios)
