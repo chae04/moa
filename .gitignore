@@ -64,3 +64,13 @@ flutter/build/
 
 # secret
 server/src/main/resources/application-local.properties
+
+# 예전 Firebase 설정 파일 (2026-11-17 제거, 다시 올라가지 않게)
+flutter/android/app/google-services.json
+flutter/ios/Runner/GoogleService-Info.plist
+flutter/lib/firebase_options.dart
+flutter/firebase.json
+
+# 환경변수 파일
+.env
+.env.*
